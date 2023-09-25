@@ -13,7 +13,7 @@ await esbuild({
 	entryPoints: [compile_file],
 	outdir: "./dist/",
 	bundle: true,
-	minify: true,
+	minify: false,
 	platform: "neutral",
 	format: "esm",
 	target: "esnext",
