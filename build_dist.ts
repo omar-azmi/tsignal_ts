@@ -1,4 +1,4 @@
-import { build as esbuild, stop as esstop } from "https://deno.land/x/esbuild@v0.17.19/mod.js"
+import { build as esbuild, stop as esstop, transform as estransform } from "https://deno.land/x/esbuild@v0.17.19/mod.js"
 import { denoPlugins } from "https://deno.land/x/esbuild_deno_loader@0.8.1/mod.ts"
 
 /** use:
@@ -7,20 +7,35 @@ import { denoPlugins } from "https://deno.land/x/esbuild_deno_loader@0.8.1/mod.t
 */
 const
 	compile_file = Deno.args[0] ?? "./src/mod.ts",
-	compiled_file = `./dist/${compile_file.split("/").reverse()[0].slice(0, -3)}.js`
+	outdir = "./dist/",
+	compiled_file = `${outdir}${compile_file.split("/").reverse()[0].slice(0, -3)}.js`
 let t0 = performance.now(), t1: number
-await esbuild({
+const bundled_code = await esbuild({
 	entryPoints: [compile_file],
-	outdir: "./dist/",
+	outdir: outdir,
 	bundle: true,
-	minify: false,
+	minifySyntax: true,
 	platform: "neutral",
 	format: "esm",
 	target: "esnext",
 	plugins: [...denoPlugins()],
-	define: {},
+	write: false,
 })
+
+await Promise.all(bundled_code.outputFiles.map(
+	async ({ text, path }, file_number) => {
+		return Deno.writeTextFile(path, (await estransform(text, {
+			minify: true,
+			platform: "neutral",
+			format: "esm",
+			target: "esnext",
+		})).code).then(() => {
+			console.log("file ", file_number, " binary size:", Deno.statSync(path).size / 1024, "kb")
+		})
+	}
+))
+
 esstop()
 t1 = performance.now()
 console.log("execution time:", t1 - t0, "ms")
-console.log("dist binary size:", Deno.statSync(compiled_file).size / 1024, "kb")
+//console.log("dist binary size:", Deno.statSync(compiled_file).size / 1024, "kb")

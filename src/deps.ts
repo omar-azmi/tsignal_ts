@@ -16,7 +16,9 @@ export * as typedefs from "https://raw.githubusercontent.com/omar-azmi/kitchensi
 export type { ConstructorOf } from "https://raw.githubusercontent.com/omar-azmi/kitchensink_ts/main/src/typedefs.ts"
 
 
-export const DEBUG = true
+export const enum DEBUG {
+	LOG = 0,
+}
 
 type BindableFunction<T, A extends any[], B extends any[], R> = ((this: T, ...args: [...A, ...B]) => R)
 

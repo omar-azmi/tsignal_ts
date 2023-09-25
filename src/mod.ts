@@ -1,7 +1,7 @@
 /** */
 
 import { createContext } from "./context.ts"
-import { StateSignal_Factory, MemoSignal_Factory, LazySignal_Factory, EffectSignal_Factory } from "./signal.ts"
+import { EffectSignal_Factory, LazySignal_Factory, MemoSignal_Factory, StateSignal_Factory } from "./signal.ts"
 
 const { createState, createMemo, createLazy, createEffect } = createContext(
 	["createState", StateSignal_Factory],
@@ -26,7 +26,7 @@ const
 I()
 H()
 K()
-
+fireK()
 
 /*
 const fromEntries = <K extends PropertyKey, V extends any>(entries: Iterable<readonly [K, V]>): { [KEY in K]: V } => {

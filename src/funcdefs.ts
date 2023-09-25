@@ -29,7 +29,9 @@ export const assign_fn_to_object = <OBJ extends any, FN extends CallableFunction
 	return obj as OBJ & { fn: typeof fn }
 }
 
-export const log_get_request = DEBUG ? (all_signals_get: (id: ID) => Signal<any> | undefined, observed_id: FROM_ID, observer_id?: TO_ID | UNTRACKED_ID) => {
+export const noop = /* @__PURE__ */ () => { }
+
+export const log_get_request = /* @__PURE__ */ DEBUG.LOG ? (all_signals_get: (id: ID) => Signal<any> | undefined, observed_id: FROM_ID, observer_id?: TO_ID | UNTRACKED_ID) => {
 	const
 		observed_signal = all_signals_get(observed_id)!,
 		observer_signal = observer_id ? all_signals_get(observer_id)! : { name: "untracked" }
@@ -38,4 +40,4 @@ export const log_get_request = DEBUG ? (all_signals_get: (id: ID) => Signal<any>
 		"\tby OBSERVER:\t", observer_signal.name,
 		"\twith VALUE\t", observed_signal.value,
 	)
-} : () => { }
+} : noop

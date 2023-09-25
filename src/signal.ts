@@ -96,7 +96,7 @@ export const BaseSyncSignalClass_Factory = (
 				// register this.id to observer
 				fadd(this.id, observer_id)
 			}
-			if (DEBUG) { log_get_request(all_signals_get, this.id, observer_id) }
+			if (DEBUG.LOG) { log_get_request(all_signals_get, this.id, observer_id) }
 			return this.value as T
 		}
 

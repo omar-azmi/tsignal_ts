@@ -1,5 +1,4 @@
-import { bind_array_clear, bind_array_push, bind_map_clear, bind_map_get, bind_map_set, bind_set_add, bind_set_clear, bind_set_delete, bind_set_has } from "https://raw.githubusercontent.com/omar-azmi/kitchensink_ts/main/src/binder.ts"
-import { DEBUG, bindMethodToSelfByName } from "./deps.ts"
+import { DEBUG, bindMethodToSelfByName, bind_array_clear, bind_array_push, bind_map_clear, bind_map_get, bind_map_set, bind_set_add, bind_set_clear, bind_set_delete, bind_set_has } from "./deps.ts"
 import { hash_ids } from "./funcdefs.ts"
 import { BaseSyncSignalClass_Factory } from "./signal.ts"
 import { FROM_ID, HASHED_IDS, ID, Signal, SignalUpdateStatus, TO_ID } from "./typedefs.ts"
@@ -126,7 +125,7 @@ export const createContext = <
 
 	const propagateSignalUpdate = (id: ID, force?: true | any) => {
 		if (to_visit_this_cycle_delete(id)) {
-			if (DEBUG) { console.log("UPDATE_CYCLE\t", "visiting   :\t", all_signals_get(id)?.name) }
+			if (DEBUG.LOG) { console.log("UPDATE_CYCLE\t", "visiting   :\t", all_signals_get(id)?.name) }
 			// first make sure that all of this signal's dependencies are up to date (should they be among the set of ids to visit this update cycle)
 			// `any_updated_dependency` is always initially `false`. however, if the signal id was `force`d, then it would be `true`, and skip dependency checking and updating.
 			// you must use `force === true` for `StateSignal`s (because they are dependency free), or for a independently fired `EffectSignal`
@@ -145,7 +144,7 @@ export const createContext = <
 				(all_signals_get(id)?.run() ?? SignalUpdateStatus.UNCHANGED) :
 				any_updated_dependency as (SignalUpdateStatus.UNCHANGED | SignalUpdateStatus.ABORTED)
 			updated_this_cycle_set(id, this_signal_update_status)
-			if (DEBUG) { console.log("UPDATE_CYCLE\t", this_signal_update_status > 0 ? "propagating:\t" : this_signal_update_status < 0 ? "delaying    \t" : "blocking   :\t", all_signals_get(id)?.name) }
+			if (DEBUG.LOG) { console.log("UPDATE_CYCLE\t", this_signal_update_status > 0 ? "propagating:\t" : this_signal_update_status < 0 ? "delaying    \t" : "blocking   :\t", all_signals_get(id)?.name) }
 			if (this_signal_update_status >= SignalUpdateStatus.UPDATED) {
 				fmap_get(id)?.forEach(propagateSignalUpdate)
 			} else if (this_signal_update_status <= SignalUpdateStatus.ABORTED) {
