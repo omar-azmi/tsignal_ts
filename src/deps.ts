@@ -22,6 +22,17 @@ export const enum DEBUG {
 
 type BindableFunction<T, A extends any[], B extends any[], R> = ((this: T, ...args: [...A, ...B]) => R)
 
+export const bindMethodToSelf = /*@__PURE__*/ <
+	S,
+	A extends any[],
+	B extends any[],
+	R,
+>(
+	self: S,
+	func: BindableFunction<S, A, B, R>,
+	...args: A
+) => func.bind<S, A, B, R>(self, ...args)
+
 export const bindMethodToSelfByName = /*@__PURE__*/ <
 	S extends Record<M, BindableFunction<S, A, any[], any>>,
 	M extends PropertyKey,

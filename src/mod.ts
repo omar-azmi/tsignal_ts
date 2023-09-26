@@ -3,12 +3,12 @@
 import { createContext } from "./context.ts"
 import { EffectSignal_Factory, LazySignal_Factory, MemoSignal_Factory, StateSignal_Factory } from "./signal.ts"
 
-const { createState, createMemo, createLazy, createEffect } = createContext(
-	["createState", StateSignal_Factory],
-	["createMemo", MemoSignal_Factory],
-	["createLazy", LazySignal_Factory],
-	["createEffect", EffectSignal_Factory],
-)
+const { createState, createMemo, createLazy, createEffect } = createContext({
+	"createState": StateSignal_Factory,
+	"createMemo": MemoSignal_Factory,
+	"createLazy": LazySignal_Factory,
+	"createEffect": EffectSignal_Factory,
+})
 
 const
 	[A, setA] = createState(1, { name: "A" }),
@@ -26,7 +26,18 @@ const
 I()
 H()
 K()
-fireK()
+//fireK()
+
+
+let start = performance.now()
+for (let A_value = 0; A_value < 100_000; A_value++) {
+	setA(A_value)
+}
+let end = performance.now()
+console.log("time:\t", end - start, " ms") // takes 160ms to 220ms for updating signal `A` 100_000 times (with `DEBUG` off) (dfs nodes to update/visit are cached after first run)
+
+setA(10)
+setB(10)
 
 /*
 const fromEntries = <K extends PropertyKey, V extends any>(entries: Iterable<readonly [K, V]>): { [KEY in K]: V } => {

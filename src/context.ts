@@ -1,19 +1,24 @@
 import { DEBUG, bindMethodToSelfByName, bind_array_clear, bind_array_push, bind_map_clear, bind_map_get, bind_map_set, bind_set_add, bind_set_clear, bind_set_delete, bind_set_has } from "./deps.ts"
-import { hash_ids } from "./funcdefs.ts"
-import { BaseSyncSignalClass_Factory } from "./signal.ts"
-import { FROM_ID, HASHED_IDS, ID, Signal, SignalUpdateStatus, TO_ID } from "./typedefs.ts"
+import { assign_equals_to_object, assign_id_name_to_object, default_equality, falsey_equality, hash_ids, log_get_request } from "./funcdefs.ts"
+import { BaseSignalClass, BaseSignalConfig } from "./signal.ts"
+import { EqualityFn, FROM_ID, HASHED_IDS, ID, Signal, SignalUpdateStatus, SubPropertyMapper, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.ts"
 
+// [DONE] TODO: INLINE BaseSignal class into createContext
+// TODO: return `startBatching`, `endBatching`, and `scopedBatching` for every `createContext`'s return object
+// TODO: implement `assign_fn_to_object` and etc.. with the intent of having the end user use it to dynamically modify `MemoFn`. this function must also be exported by the context
+// in fact, consider having a `Context` class or object interface, which will include `createXYZSignal`s in a `signals` subproperty, `*Batching` in a `batch` subproperty, and (`changeFn` | `changeEffect` | etc...) in either a `dynamic` or `change` subproperty
+// also, signals which do not intend to be dynamic should not assign an `id` property to their `Accessor<T>` or `Setter<T>` or `Emmiter` (bound) functions
+// TODO: import `bindMethodToSelfByName` directly from `kitchensink_ts/binder.ts`, now that it has implemented it
+// TODO: move `BaseSignalClass`, and `BaseSignalConfig` to `typedefs.ts`
 
 export const createContext = <
-	SIGNAL_CLASS extends BASE_SIGNAL_CLASS,
-	SIGNAL_CREATE extends ReturnType<typeof BaseSyncSignalClass_Factory>["create"],
-	BASE_SIGNAL_CLASS = ReturnType<typeof BaseSyncSignalClass_Factory>
+	SIGNAL_CLASSES extends Record<
+		string,
+		(base_signal_class: typeof BaseSignalClass<any>, ...args: any[]) => typeof BaseSignalClass<any>
+	>
 >(
-	...include_signal_classes: ([
-		class_name: string,
-		class_factory: (base_signal_class: BASE_SIGNAL_CLASS, ...args: any[]) => SIGNAL_CLASS,
-	])[]
-): Record<string, SIGNAL_CREATE> => {
+	include_signal_classes: SIGNAL_CLASSES
+): SubPropertyMapper<{ [NAME in keyof SIGNAL_CLASSES]: ReturnType<SIGNAL_CLASSES[NAME]> }, "create"> => {
 	let
 		id_counter: number = 0,
 		batch_nestedness = 0
@@ -153,13 +158,96 @@ export const createContext = <
 		}
 	}
 
+	const base_signal_class = class <T> implements BaseSignalClass<T> {
+		declare id: ID
+		declare rid: ID | UNTRACKED_ID
+		declare name?: string
+		declare equals: EqualityFn<T>
 
+		constructor(
+			public value?: T,
+			{
+				name,
+				equals,
+			}: BaseSignalConfig<T> = {},
+		) {
+			const id = id_counter_increment()
+			assign_id_name_to_object(this, id, name)
+			assign_equals_to_object<this, T>(this, equals === false ? falsey_equality : (equals ?? default_equality))
+			// register the new signal
+			all_signals_set(id, this)
+			// clear the `ids_to_visit_cache`, because the old cache won't include this new signal in any of this signal's dependency pathways.
+			// the pathway (ie DFS) has to be re-discovered for this new signal to be included in it
+			ids_to_visit_cache_clear()
+		}
 
-	const base_signal_class = BaseSyncSignalClass_Factory(id_counter_increment, all_signals_get, all_signals_set, fadd, ids_to_visit_cache_clear, fireID) as BASE_SIGNAL_CLASS
-	const create_signal_functions: Record<typeof include_signal_classes[number][0], SIGNAL_CREATE> = {}
-	for (const [class_name, class_factory] of include_signal_classes) {
-		// @ts-ignore: temp
-		create_signal_functions[class_name] = bindMethodToSelfByName(class_factory(base_signal_class), "create")
+		get(observer_id?: TO_ID | UNTRACKED_ID): T {
+			if (observer_id) {
+				// register this.id to observer
+				fadd(this.id, observer_id)
+			}
+			if (DEBUG.LOG) { log_get_request(all_signals_get, this.id, observer_id) }
+			return this.value as T
+		}
+
+		set(new_value: T | Updater<T>): boolean {
+			const old_value = this.value
+			return !this.equals(old_value, (
+				this.value = typeof new_value === "function" ?
+					(new_value as Updater<T>)(old_value) :
+					new_value
+			))
+		}
+
+		run(): SignalUpdateStatus {
+			return SignalUpdateStatus.UPDATED
+		}
+
+		static create<T>(...args: any[]): any {
+			return new this<T>(...args)
+		}
+
+		static fireID = fireID
 	}
-	return create_signal_functions
+
+	const create_signal_functions: Partial<SubPropertyMapper<{ [NAME in keyof SIGNAL_CLASSES]: ReturnType<SIGNAL_CLASSES[NAME]> }, "create">> = {}
+	for (const class_name in include_signal_classes) {
+		create_signal_functions[class_name] = bindMethodToSelfByName(
+			include_signal_classes[class_name](base_signal_class),
+			"create"
+		)
+	}
+	return create_signal_functions as SubPropertyMapper<{ [NAME in keyof SIGNAL_CLASSES]: ReturnType<SIGNAL_CLASSES[NAME]> }, "create">
 }
+
+/*
+const RRR = {
+	"createLazy": LazySignal_Factory(BaseSignalClass),
+	"createMemo": MemoSignal_Factory(BaseSignalClass),
+}
+type A = SubPropertyMapper<typeof RRR, "create">
+
+const a = <T extends Record<string, typeof BaseSignalClass<any>>>(obj: T): SubPropertyMapper<T, "create"> => {
+	const z: Partial<SubPropertyMapper<T, "create">> = {}
+	for (const name in obj) {
+		z[name] = obj[name]["create"]
+	}
+	return z as SubPropertyMapper<T, "create">
+}
+
+const b = a({
+	"createLazy": LazySignal_Factory(BaseSignalClass),
+	"createMemo": MemoSignal_Factory(BaseSignalClass),
+})
+
+const c = b.createLazy<number>(() => 5,)
+
+
+const RRR2 = {
+	"createLazy": LazySignal_Factory,
+	"createMemo": MemoSignal_Factory,
+}
+
+const {createLazy, createMemo} = createContext(RRR2)
+createLazy(() => 3)
+*/

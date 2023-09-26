@@ -6,9 +6,9 @@
  * Yogatta! hontoni ureshii desu. <br>
 */
 
-import { DEBUG, bindMethodToSelfByName } from "./deps.ts"
-import { assign_equals_to_object, assign_fn_to_object, assign_id_name_to_object, default_equality, falsey_equality, log_get_request } from "./funcdefs.ts"
-import { Accessor, EqualityCheck, EqualityFn, FROM_ID, HASHED_IDS, ID, Setter, Signal, SignalUpdateStatus, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.ts"
+import { bindMethodToSelfByName } from "./deps.ts"
+import { assign_fn_to_object } from "./funcdefs.ts"
+import { Accessor, EqualityCheck, EqualityFn, ID, Setter, Signal, SignalUpdateStatus, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.ts"
 
 
 export interface BaseSignalConfig<T> {
@@ -36,95 +36,24 @@ export interface BaseSignalConfig<T> {
 	value?: T
 }
 
-type ContextVariables = [
-	id_counter_increment: () => ID,
-	all_signals: Map<ID, Signal<any>>,
-	fmap: Map<FROM_ID, Set<TO_ID>>,
-	ids_to_visit_cache: Map<HASHED_IDS, Set<ID>>,
-	BaseSignalClass?: ReturnType<typeof BaseSyncSignalClass_Factory>
-]
-
-export type OrderedContextVariables = [
-	id_counter_increment: () => ID,
-	all_signals_get: (key: number) => SyncSignal<any> | undefined,
-	all_signals_set: (key: number, value: SyncSignal<any>) => Map<number, SyncSignal<any>>,
-	fadd: (src_id: FROM_ID, dst_id: TO_ID) => void,
-	ids_to_visit_cache_clear: () => void,
-	base_signal_class?: BaseSignalClass,
-]
-
-export interface SyncSignal<T> extends Signal<T> {
+export declare class BaseSignalClass<T> implements Signal<T> {
+	id: ID
+	rid: ID | UNTRACKED_ID
+	name?: string
 	value?: T
 	equals: EqualityFn<T>
-}
-
-export type BaseSignalClass = ReturnType<typeof BaseSyncSignalClass_Factory>
-
-export const BaseSyncSignalClass_Factory = (
-	id_counter_increment: () => ID,
-	all_signals_get: (key: number) => Signal<any> | undefined,
-	all_signals_set: (key: number, value: Signal<any>) => Map<number, Signal<any>>,
-	fadd: (src_id: FROM_ID, dst_id: TO_ID) => void,
-	ids_to_visit_cache_clear: () => void,
-	fire_id: (id: ID) => boolean,
-) => {
-	return class BaseSyncSignal<T> implements SyncSignal<T> {
-		declare id: ID
-		declare rid: ID | UNTRACKED_ID
-		declare name?: string
-		declare equals: EqualityFn<T>
-
-		constructor(
-			public value?: T,
-			{
-				name,
-				equals,
-			}: BaseSignalConfig<T> = {},
-		) {
-			const id = id_counter_increment()
-			assign_id_name_to_object(this, id, name)
-			assign_equals_to_object<this, T>(this, equals === false ? falsey_equality : (equals ?? default_equality))
-			// register the new signal
-			all_signals_set(id, this)
-			// clear the `ids_to_visit_cache`, because the old cache won't include this new signal in any of this signal's dependency pathways.
-			// the pathway (ie DFS) has to be re-discovered for this new signal to be included in it
-			ids_to_visit_cache_clear()
-		}
-
-		get(observer_id?: TO_ID | UNTRACKED_ID): T {
-			if (observer_id) {
-				// register this.id to observer
-				fadd(this.id, observer_id)
-			}
-			if (DEBUG.LOG) { log_get_request(all_signals_get, this.id, observer_id) }
-			return this.value as T
-		}
-
-		set(new_value: T | Updater<T>): boolean {
-			const old_value = this.value
-			return !this.equals(old_value, (
-				this.value = typeof new_value === "function" ?
-					(new_value as Updater<T>)(old_value) :
-					new_value
-			))
-		}
-
-		run(): SignalUpdateStatus {
-			return SignalUpdateStatus.UPDATED
-		}
-
-		static create<T>(...args: any[]): any {
-			return new this<T>(...args)
-		}
-
-		static fireID = fire_id
-	}
+	constructor(value?: T, config?: BaseSignalConfig<T>)
+	get(observer_id?: TO_ID | UNTRACKED_ID): T
+	set(new_value: T | Updater<T>): boolean
+	run(): SignalUpdateStatus
+	static create<T>(...args: any[]): any
+	static fireID(id: ID): boolean
 }
 
 /** type definition for an accessor and setter pair, which is what is returned by {@link createSignal} */
 export type AccessorSetter<T> = [Accessor<T>, Setter<T>]
 
-export const StateSignal_Factory = (base_signal_class: BaseSignalClass) => {
+export const StateSignal_Factory = (base_signal_class: typeof BaseSignalClass) => {
 	const fireID = base_signal_class.fireID
 	return class StateSignal<T> extends base_signal_class<T> {
 		declare value: T
@@ -159,7 +88,7 @@ export const StateSignal_Factory = (base_signal_class: BaseSignalClass) => {
 /** type definition for a memorizable function. to be used as a call parameter for {@link createMemo} */
 export type MemoFn<T> = (observer_id: TO_ID | UNTRACKED_ID) => T | Updater<T>
 
-export const MemoSignal_Factory = (base_signal_class: BaseSignalClass) => {
+export const MemoSignal_Factory = (base_signal_class: typeof BaseSignalClass) => {
 	return class MemoSignal<T> extends base_signal_class<T> {
 		declare fn: MemoFn<T>
 
@@ -194,7 +123,7 @@ export const MemoSignal_Factory = (base_signal_class: BaseSignalClass) => {
 }
 
 
-export const LazySignal_Factory = (base_signal_class: BaseSignalClass) => {
+export const LazySignal_Factory = (base_signal_class: typeof BaseSignalClass) => {
 	return class LazySignal<T> extends base_signal_class<T> {
 		declare fn: MemoFn<T>
 		declare dirty: 0 | 1
@@ -245,7 +174,7 @@ export type EffectEmitter = () => boolean
 /** type definition for an effect accessor (ie for registering as an observer) and an effect forceful-emitter pair, which is what is returned by {@link createEffect} */
 export type AccessorEmitter = [Accessor<void>, EffectEmitter]
 
-export const EffectSignal_Factory = (base_signal_class: BaseSignalClass) => {
+export const EffectSignal_Factory = (base_signal_class: typeof BaseSignalClass) => {
 	const fireID = base_signal_class.fireID
 	return class EffectSignal extends base_signal_class<void> {
 		declare fn: EffectFn

@@ -56,3 +56,4 @@ export const enum SignalUpdateStatus {
 	UPDATED = 1,
 }
 
+export type SubPropertyMapper<T, PROP extends keyof T[keyof T]> = { [K in keyof T]: T[K][PROP] }
