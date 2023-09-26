@@ -8,47 +8,7 @@
 
 import { bindMethodToSelfByName } from "./deps.ts"
 import { assign_fn_to_object } from "./funcdefs.ts"
-import { Accessor, EqualityCheck, EqualityFn, ID, Setter, Signal, SignalUpdateStatus, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.ts"
-
-
-export interface BaseSignalConfig<T> {
-	/** give a name to the signal for debuging purposes */
-	name?: string
-
-	/** when a signal's value is updated (either through a {@link Setter}, or a change in the value of a dependancy signal in the case of a memo),
-	 * then the dependants/observers of THIS signal will only be notified if the equality check function evaluates to a `false`. <br>
-	 * see {@link EqualityCheck} to see its function signature and default behavior when left `undefined`
-	*/
-	equals?: EqualityCheck<T>
-
-	/** when `false`, the computaion/effect function will be be evaluated/run immediately after it is declared. <br>
-	 * however, if left `undefined`, or `true`, the function's execution will be put off until the reactive signal returned by the createXYZ is called/accessed. <br>
-	 * by default, `defer` is `true`, and reactivity is not immediately executed during initialization. <br>
-	 * the reason why you might want to defer a reactive function is because the body of the reactive function may contain symbols/variables
-	 * that have not been defined yet, in which case an error will be raised, unless you choose to defer the first execution. <br>
-	*/
-	defer?: boolean
-
-	/** initial value declaration for reactive signals. <br>
-	 * its purpose is only to be used as a previous value (`prev_value`) for the optional `equals` equality function,
-	 * so that you don't get an `undefined` as the `prev_value` on the very first comparison.
-	*/
-	value?: T
-}
-
-export declare class BaseSignalClass<T> implements Signal<T> {
-	id: ID
-	rid: ID | UNTRACKED_ID
-	name?: string
-	value?: T
-	equals: EqualityFn<T>
-	constructor(value?: T, config?: BaseSignalConfig<T>)
-	get(observer_id?: TO_ID | UNTRACKED_ID): T
-	set(new_value: T | Updater<T>): boolean
-	run(): SignalUpdateStatus
-	static create<T>(...args: any[]): any
-	static fireID(id: ID): boolean
-}
+import { Accessor, BaseSignalClass, BaseSignalConfig, Setter, SignalUpdateStatus, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.ts"
 
 /** type definition for an accessor and setter pair, which is what is returned by {@link createSignal} */
 export type AccessorSetter<T> = [Accessor<T>, Setter<T>]

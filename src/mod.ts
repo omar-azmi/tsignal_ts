@@ -26,9 +26,9 @@ const
 I()
 H()
 K()
-//fireK()
+fireK()
 
-
+/*
 let start = performance.now()
 for (let A_value = 0; A_value < 100_000; A_value++) {
 	setA(A_value)
@@ -38,11 +38,4 @@ console.log("time:\t", end - start, " ms") // takes 160ms to 220ms for updating 
 
 setA(10)
 setB(10)
-
-/*
-const fromEntries = <K extends PropertyKey, V extends any>(entries: Iterable<readonly [K, V]>): { [KEY in K]: V } => {
-	return Object.fromEntries(entries) as { [KEY in K]: V }
-}
-
-const B = fromEntries([["a" as const, 2 as const] as const, ["b" as const, 3 as const] as const] as const)
 */

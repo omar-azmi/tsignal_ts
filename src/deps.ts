@@ -1,5 +1,5 @@
-
 export {
+	bindMethodToSelfByName,
 	bind_array_clear,
 	bind_array_push,
 	bind_map_clear,
@@ -19,27 +19,3 @@ export type { ConstructorOf } from "https://raw.githubusercontent.com/omar-azmi/
 export const enum DEBUG {
 	LOG = 0,
 }
-
-type BindableFunction<T, A extends any[], B extends any[], R> = ((this: T, ...args: [...A, ...B]) => R)
-
-export const bindMethodToSelf = /*@__PURE__*/ <
-	S,
-	A extends any[],
-	B extends any[],
-	R,
->(
-	self: S,
-	func: BindableFunction<S, A, B, R>,
-	...args: A
-) => func.bind<S, A, B, R>(self, ...args)
-
-export const bindMethodToSelfByName = /*@__PURE__*/ <
-	S extends Record<M, BindableFunction<S, A, any[], any>>,
-	M extends PropertyKey,
-	A extends (S[M] extends BindableFunction<S, (infer P)[], any[], R> ? P[] : never),
-	R extends ReturnType<S[M]>,
->(
-	self: S,
-	method_name: M,
-	...args: A
-) => self[method_name].bind<S, A, S[M] extends BindableFunction<S, A, infer B, R> ? B : never, R>(self, ...args)
