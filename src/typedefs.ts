@@ -13,16 +13,16 @@ export type TO_ID = ID
 export type UNTRACKED_ID = 0
 export type HASHED_IDS = number
 
-export type SignalSelfID = { id?: ID, rid?: ID | UNTRACKED_ID, name?: string }
+export type SelfIdentification = { id: ID, _name?: string }
 
 /** type definition for an incremental updater function. */
 export type Updater<T> = (prev_value?: T) => T
 
 /** type definition for a signal accessor (value getter) function. */
-export type Accessor<T> = ((observer_id?: TO_ID | UNTRACKED_ID) => T) & SignalSelfID
+export type Accessor<T> = ((observer_id?: TO_ID | UNTRACKED_ID) => T) & Partial<SelfIdentification>
 
 /** type definition for a signal value setter function. */
-export type Setter<T> = ((new_value: T | Updater<T>) => boolean) & SignalSelfID
+export type Setter<T> = ((new_value: T | Updater<T>) => boolean) & Partial<SelfIdentification>
 
 /** type definition for when a signal's _update_ function `run` is called by the signal update propagator `propagateSignalUpdate` inside of {@link context.createContext}. <br>
  * the return value should indicate whether this signal has:
@@ -64,6 +64,18 @@ export interface BaseSignalConfig<T> {
 	 * so that you don't get an `undefined` as the `prev_value` on the very first comparison.
 	*/
 	value?: T
+
+	/** specify if the signal is _dynamic_, and therefore _identifiable_. <br>
+	 * all identifiable signal accessor/setter/emmiter functions can have their properties modified externally and dynamically. <br>
+	 * but doing so may be an anti-pattern, especially if the return types differ from the original. <br>
+	 * dynamic properties of particular interest to the end-user may include:
+	 * - {@link BaseSignalClass.value}
+	 * - {@link BaseSignalClass.equals}
+	 * - {@link BaseSignalClass.fn}
+	 * note that it is the static {@link BaseSignalClass.create} function of a signal's class that should assign identification to the signal-bound accessor/setter/emmiter functions. <br>
+	 * in general, you would want to call the `BaseSignalClass`'s static `create` method, which serves this very purpose.
+	*/
+	dynamic?: boolean
 }
 
 export declare class BaseSignalClass<T> implements Signal<T> {
@@ -72,30 +84,15 @@ export declare class BaseSignalClass<T> implements Signal<T> {
 	name?: string
 	value?: T
 	equals: EqualityFn<T>
+	fn?: (observer_id: TO_ID | UNTRACKED_ID) => (T | Updater<T>) | any
 	constructor(value?: T, config?: BaseSignalConfig<T>)
 	get(observer_id?: TO_ID | UNTRACKED_ID): T
 	set(new_value: T | Updater<T>): boolean
 	run(): SignalUpdateStatus
+	bindMethod<M extends keyof this>(method_name: M, dynamic?: boolean): this[M] & (typeof dynamic extends true ? SelfIdentification : Partial<SelfIdentification>)
 	static create<T>(...args: any[]): any
 	static fireID(id: ID): boolean
 }
-
-/** type definition for an effect function. to be used as a call parameter for {@link createEffect} <br>
- * the return value of the function describes whether or not the signal should propagate. <br>
- * if `undefined` or `true` (or truethy), then the effect signal will propagate onto its observer signals,
- * otherwise if it is explicitly `false`, then it won't propagate.
-*/
-export type EffectFn = (observer_id: TO_ID | UNTRACKED_ID) => void | undefined | boolean
-
-/** a function that forcefully runs the {@link EffectFn} of an effect signal, and then propagates towards the observers of that effect signal. <br>
- * the return value is `true` if the effect is ran and propagated immediately,
- * or `false` if it did not fire immediately because of some form of batching stopped it from doing so.
-*/
-export type EffectEmitter = () => boolean
-
-/** type definition for an effect accessor (ie for registering as an observer) and an effect forceful-emitter pair, which is what is returned by {@link createEffect} */
-export type AccessorEmitter = [Accessor<void>, EffectEmitter]
-
 
 export const enum SignalUpdateStatus {
 	ABORTED = -1,

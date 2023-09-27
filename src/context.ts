@@ -1,14 +1,51 @@
-import { DEBUG, bindMethodToSelfByName, bind_array_clear, bind_array_push, bind_map_clear, bind_map_get, bind_map_set, bind_set_add, bind_set_clear, bind_set_delete, bind_set_has } from "./deps.ts"
+import { DEBUG, bindMethodToSelfByName, bind_array_clear, bind_array_push, bind_map_clear, bind_map_get, bind_map_set, bind_set_add, bind_set_clear, bind_set_delete, bind_set_has, object_assign, prototypeOfClass } from "./deps.ts"
 import { assign_equals_to_object, assign_id_name_to_object, default_equality, falsey_equality, hash_ids, log_get_request } from "./funcdefs.ts"
-import { BaseSignalClass, BaseSignalConfig, EqualityFn, FROM_ID, HASHED_IDS, ID, Signal, SignalUpdateStatus, SubPropertyMapper, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.ts"
+import { EffectEmitter, EffectFn, MemoFn } from "./signal.ts"
+import { Accessor, BaseSignalClass, BaseSignalConfig, EqualityFn, FROM_ID, HASHED_IDS, ID, SelfIdentification, Setter, Signal, SignalUpdateStatus, SubPropertyMapper, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.ts"
 
 // [DONE] TODO: INLINE BaseSignal class into createContext
-// TODO: return `startBatching`, `endBatching`, and `scopedBatching` for every `createContext`'s return object
-// TODO: implement `assign_fn_to_object` and etc.. with the intent of having the end user use it to dynamically modify `MemoFn`. this function must also be exported by the context
-// in fact, consider having a `Context` class or object interface, which will include `createXYZSignal`s in a `signals` subproperty, `*Batching` in a `batch` subproperty, and (`changeFn` | `changeEffect` | etc...) in either a `dynamic` or `change` subproperty
-// also, signals which do not intend to be dynamic should not assign an `id` property to their `Accessor<T>` or `Setter<T>` or `Emmiter` (bound) functions
+// [DONE, see `SignalContext_Batch`] TODO: return `startBatching`, `endBatching`, and `scopedBatching` for every `createContext`'s return object
+// [DONE, see `SignalContext_Dynamic`] TODO: implement `assign_fn_to_object` and etc.. with the intent of having the end user use it to dynamically modify `MemoFn`. this function must also be exported by the context
+// [DONE, see `SignalContext`] in fact, consider having a `Context` class or object interface, which will include `createXYZSignal`s in a `signals` subproperty, `*Batching` in a `batch` subproperty, and (`changeFn` | `changeEffect` | etc...) in either a `dynamic` or `change` subproperty
+// [DONE, see `InstanceType<BaseSignalClass>.bindMethod` and its `dynamic?: boolean` parameter] also, signals which do not intend to be dynamic should not assign an `id` property to their `Accessor<T>` or `Setter<T>` or `Emmiter` (bound) functions
 // [DONE] TODO: import `bindMethodToSelfByName` directly from `kitchensink_ts/binder.ts`, now that it has implemented it
 // [DONE] TODO: move `BaseSignalClass`, and `BaseSignalConfig` to `typedefs.ts`
+// TODO: implement signal swapping (with either a new signal (and the old one gets deleted), or an existing one). for a signal to be swappable, it must be of dynamic kind (ie carries `SelfIdentification`)
+// TODO: find a better name/more descriptive name for `fireID` and `BaseSignalClass.fireID`
+
+export interface SignalContext_Dynamic {
+	setValue: {
+		<T>(accessor: Accessor<T> & Partial<SelfIdentification>, new_value: T): void
+		<T>(setter: Setter<T> & Partial<SelfIdentification>, new_value: T): void
+	},
+	setEquals: {
+		<T>(accessor: Accessor<T> & Partial<SelfIdentification>, new_equals: EqualityFn<T>): void
+		<T>(setter: Setter<T> & Partial<SelfIdentification>, new_equals: EqualityFn<T>): void
+	},
+	setFn: {
+		<T>(memo_accessor: Accessor<T> & Partial<SelfIdentification>, new_fn: MemoFn<T>): void
+		(effect_accessor: Accessor<void> & Partial<SelfIdentification>, new_fn: EffectFn): void
+		(effect_emitter: EffectEmitter & Partial<SelfIdentification>, new_fn: EffectFn): void
+	},
+}
+
+export interface SignalContext_Batch {
+	startBatching: () => number
+	endBatching: () => void
+	scopedBatching: <T extends any = void, ARGS extends any[] = []>(
+		fn: (...args: ARGS) => T,
+		...args: ARGS
+	) => T
+}
+
+export interface SignalContext<SIGNAL_CLASSES extends Record<
+	string,
+	(base_signal_class: typeof BaseSignalClass<any>, ...args: any[]) => typeof BaseSignalClass<any>
+>> {
+	batch: SignalContext_Batch
+	create: SubPropertyMapper<{ [NAME in keyof SIGNAL_CLASSES]: ReturnType<SIGNAL_CLASSES[NAME]> }, "create">
+	dynamic: SignalContext_Dynamic
+}
 
 export const createContext = <
 	SIGNAL_CLASSES extends Record<
@@ -17,13 +54,12 @@ export const createContext = <
 	>
 >(
 	include_signal_classes: SIGNAL_CLASSES
-): SubPropertyMapper<{ [NAME in keyof SIGNAL_CLASSES]: ReturnType<SIGNAL_CLASSES[NAME]> }, "create"> => {
+): SignalContext<SIGNAL_CLASSES> => {
 	let
 		id_counter: number = 0,
 		batch_nestedness = 0
 
 	const
-		id_counter_increment = () => (++id_counter),
 		fmap = new Map<FROM_ID, Set<TO_ID>>(),
 		rmap = new Map<TO_ID, Set<FROM_ID>>(),
 		fmap_get = bind_map_get(fmap),
@@ -162,6 +198,7 @@ export const createContext = <
 		declare rid: ID | UNTRACKED_ID
 		declare name?: string
 		declare equals: EqualityFn<T>
+		declare fn?: (observer_id: TO_ID | UNTRACKED_ID) => (T | Updater<T>) | any
 
 		constructor(
 			public value?: T,
@@ -170,7 +207,7 @@ export const createContext = <
 				equals,
 			}: BaseSignalConfig<T> = {},
 		) {
-			const id = id_counter_increment()
+			const id = ++id_counter
 			assign_id_name_to_object(this, id, name)
 			assign_equals_to_object<this, T>(this, equals === false ? falsey_equality : (equals ?? default_equality))
 			// register the new signal
@@ -202,12 +239,18 @@ export const createContext = <
 			return SignalUpdateStatus.UPDATED
 		}
 
+		bindMethod<M extends keyof this>(method_name: M, dynamic?: boolean): this[M] & (typeof dynamic extends true ? SelfIdentification : Partial<SelfIdentification>) {
+			const bound_method = bindMethodToSelfByName(this as any, method_name) as any
+			return dynamic ? object_assign(bound_method, { id: this.id, _name: this.name }) : bound_method
+		}
+
 		static create<T>(...args: any[]): any {
 			return new this<T>(...args)
 		}
 
 		static fireID = fireID
 	}
+	const base_signal_class_prototype = prototypeOfClass(base_signal_class)
 
 	const create_signal_functions: Partial<SubPropertyMapper<{ [NAME in keyof SIGNAL_CLASSES]: ReturnType<SIGNAL_CLASSES[NAME]> }, "create">> = {}
 	for (const class_name in include_signal_classes) {
@@ -216,5 +259,22 @@ export const createContext = <
 			"create"
 		)
 	}
-	return create_signal_functions as SubPropertyMapper<{ [NAME in keyof SIGNAL_CLASSES]: ReturnType<SIGNAL_CLASSES[NAME]> }, "create">
+	return {
+		batch: { startBatching, endBatching, scopedBatching },
+		create: create_signal_functions as SubPropertyMapper<{ [NAME in keyof SIGNAL_CLASSES]: ReturnType<SIGNAL_CLASSES[NAME]> }, "create">,
+		dynamic: {
+			setValue: <T>(signal_method: (Accessor<T> | Setter<T>) & Partial<SelfIdentification>, new_value: T) => {
+				const signal = all_signals_get(signal_method.id ?? 0 as UNTRACKED_ID)
+				if (signal) { base_signal_class_prototype.set.call(signal, new_value) }
+			},
+			setEquals: <T>(signal_method: (Accessor<T> | Setter<T>) & Partial<SelfIdentification>, new_equals: EqualityFn<T>) => {
+				const signal = all_signals_get(signal_method.id ?? 0 as UNTRACKED_ID) as BaseSignalClass<T> | undefined
+				if (signal) { signal.equals = new_equals }
+			},
+			setFn: <T>(signal_method: Accessor<T> & Partial<SelfIdentification>, new_fn: MemoFn<T>) => {
+				const signal = all_signals_get(signal_method.id ?? 0 as UNTRACKED_ID) as BaseSignalClass<T> | undefined
+				if (signal) { signal.fn = new_fn }
+			},
+		}
+	}
 }

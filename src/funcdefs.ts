@@ -1,5 +1,5 @@
 import { DEBUG } from "./deps.ts"
-import { EqualityFn, FROM_ID, HASHED_IDS, ID, Signal, SignalSelfID, TO_ID, UNTRACKED_ID } from "./typedefs.ts"
+import { EqualityFn, FROM_ID, HASHED_IDS, ID, Signal, SelfIdentification, TO_ID, UNTRACKED_ID } from "./typedefs.ts"
 
 export const default_equality = (<T>(v1: T, v2: T) => (v1 === v2)) satisfies EqualityFn<any>
 export const falsey_equality = (<T>(v1: T, v2: T) => false) satisfies EqualityFn<any>
@@ -9,12 +9,12 @@ export const hash_ids = (ids: ID[]): HASHED_IDS => {
 	return ids.reduce((sum, id) => sum + id * (id + sqrt_len), 0)
 }
 
-export const assign_id_name_to_object = <OBJ extends any>(obj: OBJ, id: ID, name?: string): OBJ & SignalSelfID => {
+export const assign_id_name_to_object = <OBJ extends any>(obj: OBJ, id: ID, name?: string): OBJ & SelfIdentification => {
 	// @ts-ignore: we are assigning new properties to `obj`
 	obj.id = obj.rid = id
 	// @ts-ignore: we are assigning new properties to `obj`
 	if (name) { obj.name = name }
-	return obj as OBJ & SignalSelfID
+	return obj as OBJ & SelfIdentification
 }
 
 export const assign_equals_to_object = <OBJ extends any, T>(obj: OBJ, equals: EqualityFn<T>): OBJ & { equals: typeof equals } => {

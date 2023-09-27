@@ -3,7 +3,10 @@
 import { createContext } from "./context.ts"
 import { EffectSignal_Factory, LazySignal_Factory, MemoSignal_Factory, StateSignal_Factory } from "./signal.ts"
 
-const { createState, createMemo, createLazy, createEffect } = createContext({
+const {
+	create: { createState, createMemo, createLazy, createEffect },
+	dynamic: { setValue, setEquals, setFn }
+} = createContext({
 	"createState": StateSignal_Factory,
 	"createMemo": MemoSignal_Factory,
 	"createLazy": LazySignal_Factory,
@@ -20,12 +23,14 @@ const
 	E = createMemo((id) => (B(id) + F(id) + D(id) + C(id)), { name: "E" }),
 	F = createMemo((id) => (C(id) + 20), { name: "F" }),
 	I = createMemo((id) => (F(id) - 100), { name: "I" }),
-	[K, fireK] = createEffect((id) => { console.log("this is effect K, broadcasting", A(id), B(id), E(id)); J(id) }, { name: "K" }),
+	[K, fireK] = createEffect((id) => { console.log("this is effect K, broadcasting", A(id), B(id), E(id)); J(id) }, { name: "K", dynamic: true }),
 	[J, fireJ] = createEffect((id) => { console.log("this is effect J, broadcasting", H(id), D(id), E(id)) }, { name: "J" })
 
 I()
 H()
 K()
+fireK()
+setFn(K, () => { console.log("effect K is now free of all worldy dependencies, yet it is still fired when one of its previous dependiencies are updated. so saj...") })
 fireK()
 
 /*

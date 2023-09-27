@@ -6,7 +6,6 @@
  * Yogatta! hontoni ureshii desu. <br>
 */
 
-import { bindMethodToSelfByName } from "./deps.ts"
 import { assign_fn_to_object } from "./funcdefs.ts"
 import { Accessor, BaseSignalClass, BaseSignalConfig, Setter, SignalUpdateStatus, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.ts"
 
@@ -17,6 +16,7 @@ export const StateSignal_Factory = (base_signal_class: typeof BaseSignalClass) =
 	const fireID = base_signal_class.fireID
 	return class StateSignal<T> extends base_signal_class<T> {
 		declare value: T
+		declare fn: never
 
 		constructor(
 			value: T,
@@ -36,10 +36,12 @@ export const StateSignal_Factory = (base_signal_class: typeof BaseSignalClass) =
 		}
 
 		static create<T>(value: T, config?: BaseSignalConfig<T>): AccessorSetter<T> {
-			const new_signal = new this(value, config)
+			const
+				dynamic = config?.dynamic,
+				new_signal = new this(value, config)
 			return [
-				bindMethodToSelfByName(new_signal, "get"),
-				bindMethodToSelfByName(new_signal, "set"),
+				new_signal.bindMethod("get", dynamic),
+				new_signal.bindMethod("set", dynamic),
 			]
 		}
 	}
@@ -77,7 +79,7 @@ export const MemoSignal_Factory = (base_signal_class: typeof BaseSignalClass) =>
 
 		static create<T>(fn: MemoFn<T>, config?: BaseSignalConfig<T>): Accessor<T> {
 			const new_signal = new this(fn, config)
-			return bindMethodToSelfByName(new_signal, "get")
+			return new_signal.bindMethod("get", config?.dynamic)
 		}
 	}
 }
@@ -113,7 +115,7 @@ export const LazySignal_Factory = (base_signal_class: typeof BaseSignalClass) =>
 
 		static create<T>(fn: MemoFn<T>, config?: BaseSignalConfig<T>): Accessor<T> {
 			const new_signal = new this(fn, config)
-			return bindMethodToSelfByName(new_signal, "get")
+			return new_signal.bindMethod("get", config?.dynamic)
 		}
 	}
 }
@@ -171,11 +173,13 @@ export const EffectSignal_Factory = (base_signal_class: typeof BaseSignalClass) 
 				SignalUpdateStatus.UNCHANGED
 		}
 
-		static create<T>(fn: EffectFn, config?: BaseSignalConfig<void>): AccessorEmitter {
-			const new_signal = new this(fn, config)
+		static create(fn: EffectFn, config?: BaseSignalConfig<void>): AccessorEmitter {
+			const
+				dynamic = config?.dynamic,
+				new_signal = new this(fn, config)
 			return [
-				bindMethodToSelfByName(new_signal, "get"),
-				bindMethodToSelfByName(new_signal, "set"),
+				new_signal.bindMethod("get", dynamic),
+				new_signal.bindMethod("set", dynamic),
 			]
 		}
 	}

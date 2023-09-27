@@ -11,9 +11,10 @@ export {
 	bind_set_has
 } from "https://raw.githubusercontent.com/omar-azmi/kitchensink_ts/main/src/binder.ts"
 export * as browser from "https://raw.githubusercontent.com/omar-azmi/kitchensink_ts/main/src/browser.ts"
+export { object_assign } from "https://raw.githubusercontent.com/omar-azmi/kitchensink_ts/main/src/builtin_aliases_deps.ts"
 export { prototypeOfClass } from "https://raw.githubusercontent.com/omar-azmi/kitchensink_ts/main/src/struct.ts"
 export * as typedefs from "https://raw.githubusercontent.com/omar-azmi/kitchensink_ts/main/src/typedefs.ts"
-export type { ConstructorOf } from "https://raw.githubusercontent.com/omar-azmi/kitchensink_ts/main/src/typedefs.ts"
+export type { CallableFunctionsOf, ConstructorOf, MethodsOf } from "https://raw.githubusercontent.com/omar-azmi/kitchensink_ts/main/src/typedefs.ts"
 
 
 export const enum DEBUG {
