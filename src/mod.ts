@@ -14,23 +14,23 @@ const {
 })
 
 const
-	[A, setA] = createState(1, { name: "A" }),
-	[B, setB] = createState(2, { name: "B" }),
-	[C, setC] = createState(3, { name: "C" }),
-	H = createMemo((id) => (A(id) + G(id)), { name: "H" }),
-	G = createMemo((id) => (- D(id) + E(id) + 100), { name: "G" }),
-	D = createMemo((id) => (A(id) * 0 + 10), { name: "D" }),
-	E = createMemo((id) => (B(id) + F(id) + D(id) + C(id)), { name: "E" }),
-	F = createMemo((id) => (C(id) + 20), { name: "F" }),
-	I = createMemo((id) => (F(id) - 100), { name: "I" }),
-	[K, fireK] = createEffect((id) => { console.log("this is effect K, broadcasting", A(id), B(id), E(id)); J(id) }, { name: "K", dynamic: true }),
-	[J, fireJ] = createEffect((id) => { console.log("this is effect J, broadcasting", H(id), D(id), E(id)) }, { name: "J" })
+	[, A, setA] = createState(1, { name: "A" }),
+	[, B, setB] = createState(2, { name: "B" }),
+	[, C, setC] = createState(3, { name: "C" }),
+	[, H] = createMemo((id) => (A(id) + G(id)), { name: "H" }),
+	[, G] = createMemo((id) => (- D(id) + E(id) + 100), { name: "G" }),
+	[, D] = createMemo((id) => (A(id) * 0 + 10), { name: "D" }),
+	[, E] = createMemo((id) => (B(id) + F(id) + D(id) + C(id)), { name: "E" }),
+	[, F] = createMemo((id) => (C(id) + 20), { name: "F" }),
+	[, I] = createMemo((id) => (F(id) - 100), { name: "I" }),
+	[idK, K, fireK] = createEffect((id) => { console.log("this is effect K, broadcasting", A(id), B(id), E(id)); J(id) }, { name: "K", dynamic: true }),
+	[, J, fireJ] = createEffect((id) => { console.log("this is effect J, broadcasting", H(id), D(id), E(id)) }, { name: "J" })
 
 I()
 H()
 K()
 fireK()
-setFn(K, () => { console.log("effect K is now free of all worldy dependencies, yet it is still fired when one of its previous dependiencies are updated. so saj...") })
+setFn(idK, () => { console.log("effect K is now free of all worldy dependencies, yet it is still fired when one of its previous dependiencies are updated. so saj...") })
 fireK()
 
 /*

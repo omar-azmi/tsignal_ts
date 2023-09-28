@@ -6,8 +6,13 @@
  * Yogatta! hontoni ureshii desu. <br>
 */
 
+// TODO: implement the following kinds of signals: `DictState` (or just `Dict`), `ListState` (or just `List`), `DictMemo`, and `ListMemo`
+// - `Dict<K, V> extends BaseSignalClass<[new_value: V | undefined, mutated_key: K, dict: Dict<K, V>["dict"]]>` . the `undefined` in `new_value: V | undefined` exemplifies the case in which a key gets deleted
+// - `List<V> extends BaseSignalClass<[new_value: V | undefined, mutated_index: V, list: List<V>["list"]]>` . the `undefined` in `new_value: V | undefined` exemplifies the case in which a valeu gets deleted
+// - `DictMemo<K, V>(fn: (observed_id?: ID) => [changed_value: V, changed_key: K, dict: DictMemo<K, V>["dict"])] ) extends Dict<K, V> //with computation + memorization`
+
 import { assign_fn_to_object } from "./funcdefs.ts"
-import { Accessor, BaseSignalClass, BaseSignalConfig, Setter, SignalUpdateStatus, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.ts"
+import { Accessor, BaseSignalClass, BaseSignalConfig, ID, Setter, SignalUpdateStatus, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.ts"
 
 /** type definition for an accessor and setter pair, which is what is returned by {@link createSignal} */
 export type AccessorSetter<T> = [Accessor<T>, Setter<T>]
@@ -35,13 +40,12 @@ export const StateSignal_Factory = (base_signal_class: typeof BaseSignalClass) =
 			return false
 		}
 
-		static create<T>(value: T, config?: BaseSignalConfig<T>): AccessorSetter<T> {
-			const
-				dynamic = config?.dynamic,
-				new_signal = new this(value, config)
+		static create<T>(value: T, config?: BaseSignalConfig<T>): [idState: ID, getState: Accessor<T>, setState: Setter<T>] {
+			const new_signal = new this(value, config)
 			return [
-				new_signal.bindMethod("get", dynamic),
-				new_signal.bindMethod("set", dynamic),
+				new_signal.id,
+				new_signal.bindMethod("get"),
+				new_signal.bindMethod("set"),
 			]
 		}
 	}
@@ -77,9 +81,12 @@ export const MemoSignal_Factory = (base_signal_class: typeof BaseSignalClass) =>
 				SignalUpdateStatus.UNCHANGED
 		}
 
-		static create<T>(fn: MemoFn<T>, config?: BaseSignalConfig<T>): Accessor<T> {
+		static create<T>(fn: MemoFn<T>, config?: BaseSignalConfig<T>): [idMemo: ID, getMemo: Accessor<T>] {
 			const new_signal = new this(fn, config)
-			return new_signal.bindMethod("get", config?.dynamic)
+			return [
+				new_signal.id,
+				new_signal.bindMethod("get")
+			]
 		}
 	}
 }
@@ -113,9 +120,12 @@ export const LazySignal_Factory = (base_signal_class: typeof BaseSignalClass) =>
 			return super.get(observer_id)
 		}
 
-		static create<T>(fn: MemoFn<T>, config?: BaseSignalConfig<T>): Accessor<T> {
+		static create<T>(fn: MemoFn<T>, config?: BaseSignalConfig<T>): [idLazy: ID, getLazy: Accessor<T>] {
 			const new_signal = new this(fn, config)
-			return new_signal.bindMethod("get", config?.dynamic)
+			return [
+				new_signal.id,
+				new_signal.bindMethod("get")
+			]
 		}
 	}
 }
@@ -173,13 +183,12 @@ export const EffectSignal_Factory = (base_signal_class: typeof BaseSignalClass) 
 				SignalUpdateStatus.UNCHANGED
 		}
 
-		static create(fn: EffectFn, config?: BaseSignalConfig<void>): AccessorEmitter {
-			const
-				dynamic = config?.dynamic,
-				new_signal = new this(fn, config)
+		static create(fn: EffectFn, config?: BaseSignalConfig<void>): [idEffect: ID, dependOnEffect: Accessor<void>, fireEffect: EffectEmitter] {
+			const new_signal = new this(fn, config)
 			return [
-				new_signal.bindMethod("get", dynamic),
-				new_signal.bindMethod("set", dynamic),
+				new_signal.id,
+				new_signal.bindMethod("get"),
+				new_signal.bindMethod("set"),
 			]
 		}
 	}

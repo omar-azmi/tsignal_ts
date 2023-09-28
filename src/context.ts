@@ -1,7 +1,7 @@
-import { DEBUG, bindMethodToSelfByName, bind_array_clear, bind_array_push, bind_map_clear, bind_map_get, bind_map_set, bind_set_add, bind_set_clear, bind_set_delete, bind_set_has, object_assign, prototypeOfClass } from "./deps.ts"
+import { DEBUG, bindMethodToSelfByName, bind_array_clear, bind_array_push, bind_map_clear, bind_map_get, bind_map_set, bind_set_add, bind_set_clear, bind_set_delete, bind_set_has } from "./deps.ts"
 import { assign_equals_to_object, assign_id_name_to_object, default_equality, falsey_equality, hash_ids, log_get_request } from "./funcdefs.ts"
-import { EffectEmitter, EffectFn, MemoFn } from "./signal.ts"
-import { Accessor, BaseSignalClass, BaseSignalConfig, EqualityFn, FROM_ID, HASHED_IDS, ID, SelfIdentification, Setter, Signal, SignalUpdateStatus, SubPropertyMapper, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.ts"
+import { EffectFn, MemoFn } from "./signal.ts"
+import { BaseSignalClass, BaseSignalConfig, EqualityFn, FROM_ID, HASHED_IDS, ID, Signal, SignalUpdateStatus, SubPropertyMapper, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.ts"
 
 // [DONE] TODO: INLINE BaseSignal class into createContext
 // [DONE, see `SignalContext_Batch`] TODO: return `startBatching`, `endBatching`, and `scopedBatching` for every `createContext`'s return object
@@ -14,19 +14,9 @@ import { Accessor, BaseSignalClass, BaseSignalConfig, EqualityFn, FROM_ID, HASHE
 // TODO: find a better name/more descriptive name for `fireID` and `BaseSignalClass.fireID`
 
 export interface SignalContext_Dynamic {
-	setValue: {
-		<T>(accessor: Accessor<T> & Partial<SelfIdentification>, new_value: T): void
-		<T>(setter: Setter<T> & Partial<SelfIdentification>, new_value: T): void
-	},
-	setEquals: {
-		<T>(accessor: Accessor<T> & Partial<SelfIdentification>, new_equals: EqualityFn<T>): void
-		<T>(setter: Setter<T> & Partial<SelfIdentification>, new_equals: EqualityFn<T>): void
-	},
-	setFn: {
-		<T>(memo_accessor: Accessor<T> & Partial<SelfIdentification>, new_fn: MemoFn<T>): void
-		(effect_accessor: Accessor<void> & Partial<SelfIdentification>, new_fn: EffectFn): void
-		(effect_emitter: EffectEmitter & Partial<SelfIdentification>, new_fn: EffectFn): void
-	},
+	setValue: <T>(id: ID, new_value: T) => void,
+	setEquals: <T>(id: ID, new_equals: EqualityFn<T>) => void,
+	setFn: <T>(id: ID, new_fn: MemoFn<T> | EffectFn) => void,
 }
 
 export interface SignalContext_Batch {
@@ -239,18 +229,17 @@ export const createContext = <
 			return SignalUpdateStatus.UPDATED
 		}
 
-		bindMethod<M extends keyof this>(method_name: M, dynamic?: boolean): this[M] & (typeof dynamic extends true ? SelfIdentification : Partial<SelfIdentification>) {
-			const bound_method = bindMethodToSelfByName(this as any, method_name) as any
-			return dynamic ? object_assign(bound_method, { id: this.id, _name: this.name }) : bound_method
+		bindMethod<M extends keyof this>(method_name: M): this[M] {
+			return bindMethodToSelfByName(this as any, method_name) as this[M]
 		}
 
-		static create<T>(...args: any[]): any {
-			return new this<T>(...args)
+		static create<T>(...args: any[]): [id: ID, ...any[]] {
+			const new_signal = new this<T>(...args)
+			return [new_signal.id, new_signal]
 		}
 
 		static fireID = fireID
 	}
-	const base_signal_class_prototype = prototypeOfClass(base_signal_class)
 
 	const create_signal_functions: Partial<SubPropertyMapper<{ [NAME in keyof SIGNAL_CLASSES]: ReturnType<SIGNAL_CLASSES[NAME]> }, "create">> = {}
 	for (const class_name in include_signal_classes) {
@@ -263,16 +252,16 @@ export const createContext = <
 		batch: { startBatching, endBatching, scopedBatching },
 		create: create_signal_functions as SubPropertyMapper<{ [NAME in keyof SIGNAL_CLASSES]: ReturnType<SIGNAL_CLASSES[NAME]> }, "create">,
 		dynamic: {
-			setValue: <T>(signal_method: (Accessor<T> | Setter<T>) & Partial<SelfIdentification>, new_value: T) => {
-				const signal = all_signals_get(signal_method.id ?? 0 as UNTRACKED_ID)
-				if (signal) { base_signal_class_prototype.set.call(signal, new_value) }
+			setValue: <T>(id: ID, new_value: T) => {
+				const signal = all_signals_get(id ?? 0 as UNTRACKED_ID) as BaseSignalClass<T> | undefined
+				if (signal) { signal.value = new_value }
 			},
-			setEquals: <T>(signal_method: (Accessor<T> | Setter<T>) & Partial<SelfIdentification>, new_equals: EqualityFn<T>) => {
-				const signal = all_signals_get(signal_method.id ?? 0 as UNTRACKED_ID) as BaseSignalClass<T> | undefined
+			setEquals: <T>(id: ID, new_equals: EqualityFn<T>) => {
+				const signal = all_signals_get(id ?? 0 as UNTRACKED_ID) as BaseSignalClass<T> | undefined
 				if (signal) { signal.equals = new_equals }
 			},
-			setFn: <T>(signal_method: Accessor<T> & Partial<SelfIdentification>, new_fn: MemoFn<T>) => {
-				const signal = all_signals_get(signal_method.id ?? 0 as UNTRACKED_ID) as BaseSignalClass<T> | undefined
+			setFn: <T>(id: ID, new_fn: MemoFn<T> | EffectFn) => {
+				const signal = all_signals_get(id ?? 0 as UNTRACKED_ID) as BaseSignalClass<T> | undefined
 				if (signal) { signal.fn = new_fn }
 			},
 		}
