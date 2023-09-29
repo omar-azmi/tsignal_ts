@@ -104,7 +104,7 @@ export declare class BaseMappedSignalClass<
 	value?: DELTA_MAP
 	equals: EqualityFn<V>
 	fn?: (observer_id: TO_ID | UNTRACKED_ID) => (DELTA_MAP | Updater<DELTA_MAP>)
-	constructor(record?: Record<K, V>, config?: BaseSignalConfig<DELTA_MAP>)
+	constructor(record_wrapped?: [Record<K, V>], config?: BaseSignalConfig<DELTA_MAP>)
 	get(observer_id?: TO_ID | UNTRACKED_ID): DELTA_MAP
 	set(key: K, new_value: V | Updater<V>): boolean
 	run(): SignalUpdateStatus

@@ -8,7 +8,7 @@
 
 // TODO: implement the following kinds of signals: `DictState` (or just `Dict`), `ListState` (or just `List`), `DictMemo`, and `ListMemo`
 // - `Dict<K, V> extends BaseSignalClass<[new_value: V | undefined, mutated_key: K, dict: Dict<K, V>["dict"]]>` . the `undefined` in `new_value: V | undefined` exemplifies the case in which a key gets deleted
-// - `List<V> extends BaseSignalClass<[new_value: V | undefined, mutated_index: V, list: List<V>["list"]]>` . the `undefined` in `new_value: V | undefined` exemplifies the case in which a valeu gets deleted
+// - `List<V> extends BaseSignalClass<[new_value: V | undefined, mutated_index: V, list: List<V>["list"]]>` . the `undefined` in `new_value: V | undefined` exemplifies the case in which a value gets deleted
 // - `DictMemo<K, V>(fn: (observed_id?: ID) => [changed_value: V, changed_key: K, dict: DictMemo<K, V>["dict"])] ) extends Dict<K, V> //with computation + memorization`
 
 import { assign_fn_to_object } from "./funcdefs.ts"

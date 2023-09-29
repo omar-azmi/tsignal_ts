@@ -12,6 +12,10 @@ import { BaseSignalClass, BaseSignalConfig, EqualityFn, FROM_ID, HASHED_IDS, ID,
 // [DONE] TODO: move `BaseSignalClass`, and `BaseSignalConfig` to `typedefs.ts`
 // TODO: implement signal swapping (with either a new signal (and the old one gets deleted), or an existing one). for a signal to be swappable, it must be of dynamic kind (ie carries `SelfIdentification`)
 // TODO: find a better name/more descriptive name for `fireID` and `BaseSignalClass.fireID`
+// TODO: figure out a better inheritance structure. currently, it is difficult to factory a subtype from an existing signal_class_factory's output, unless it is the BaseSignalClass that we're talking about.
+//	best case suggestion: somehow uncouple signal classes from their context, which would allow one to write out the signal classes as standalone classes (ie top level, not factory-closure bound)
+//	possibly, make a context class, which itself provides an interface for signals to react.
+//	or, make abstraction of "contextless" signal classes, which are then wapped over a "contextful" signal class to be useful
 
 export interface SignalContext_Dynamic {
 	setValue: <T>(id: ID, new_value: T) => void,
