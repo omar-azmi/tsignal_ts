@@ -1,5 +1,5 @@
 import { array_isArray, object_keys, object_values } from "./deps.ts"
-import { Accessor, BaseMappedSignalClass, BaseSignalConfig, ID, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.ts"
+import { Accessor, BaseMappedSignalClass, SimpleSignalConfig, ID, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.ts"
 
 
 export const RecordSignal_Factory = (base_mapped_signal_class: typeof BaseMappedSignalClass) => {
@@ -11,7 +11,7 @@ export const RecordSignal_Factory = (base_mapped_signal_class: typeof BaseMapped
 
 		constructor(
 			value: Record<K, V> = {} as Record<K, V>,
-			config?: BaseSignalConfig<DELTA_RECORD>,
+			config?: SimpleSignalConfig<DELTA_RECORD>,
 		) {
 			const
 				record_is_array = array_isArray(value),
@@ -94,7 +94,7 @@ export const RecordSignal_Factory = (base_mapped_signal_class: typeof BaseMapped
 			DELTA_RECORD extends [record: Record<K, V>, ...changed_keys: Array<K>] = any
 		>(
 			record: DELTA_RECORD[0] = {} as DELTA_RECORD[0],
-			config?: BaseSignalConfig<DELTA_RECORD>
+			config?: SimpleSignalConfig<DELTA_RECORD>
 		): [
 				idRecord: ID, getDeltaRecord: Accessor<DELTA_RECORD>,
 				setRecord: (key: K, new_value: V | Updater<V>, fire?: boolean) => boolean,
@@ -127,7 +127,7 @@ export const RecordMemoSignal_Factory = (base_mapped_signal_class: typeof BaseMa
 
 		constructor(
 			value: Record<K, V> = {} as Record<K, V>,
-			config?: BaseSignalConfig<DELTA_RECORD>,
+			config?: SimpleSignalConfig<DELTA_RECORD>,
 		) {
 			const
 				record_is_array = array_isArray(value),
@@ -210,7 +210,7 @@ export const RecordMemoSignal_Factory = (base_mapped_signal_class: typeof BaseMa
 			DELTA_RECORD extends [record: Record<K, V>, ...changed_keys: Array<K>] = any
 		>(
 			record: DELTA_RECORD[0] = {} as DELTA_RECORD[0],
-			config?: BaseSignalConfig<DELTA_RECORD>
+			config?: SimpleSignalConfig<DELTA_RECORD>
 		): [
 				idRecord: ID, getDeltaRecord: Accessor<DELTA_RECORD>,
 				setRecord: (key: K, new_value: V | Updater<V>, fire?: boolean) => boolean,

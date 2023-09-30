@@ -1,10 +1,10 @@
 import { DEBUG, THROTTLE_REJECT, throttle } from "./deps.ts"
-import { EqualityCheck, EqualityFn, FROM_ID, HASHED_IDS, ID, Signal, TO_ID, UNTRACKED_ID } from "./typedefs.ts"
+import { EqualityCheck, EqualityFn, FROM_ID, HASHED_IDS, ID, ContextSignal, TO_ID, UNTRACKED_ID } from "./typedefs.ts"
 
 export const default_equality = (<T>(v1: T, v2: T) => (v1 === v2)) satisfies EqualityFn<any>
 export const falsey_equality = (<T>(v1: T, v2: T) => false) satisfies EqualityFn<any>
 
-/** transforms a regular equality check function ({@link BaseSignalConfig.equals}) into a one that throttles when called too frequently. <br>
+/** transforms a regular equality check function ({@link SimpleSignalConfig.equals}) into a one that throttles when called too frequently. <br>
  * this means that a singal composed of this as its `equals` function will limit propagating itself further, until at least `delta_time_ms`
  * amount of time has passed since the last time it was potentially propagated.
  * 
@@ -65,7 +65,7 @@ export const assign_fn_to_object = <OBJ extends any, FN extends CallableFunction
 
 export const noop = /* @__PURE__ */ () => { }
 
-export const log_get_request = /* @__PURE__ */ DEBUG.LOG ? (all_signals_get: (id: ID) => Signal<any> | undefined, observed_id: FROM_ID, observer_id?: TO_ID | UNTRACKED_ID) => {
+export const log_get_request = /* @__PURE__ */ DEBUG.LOG ? (all_signals_get: (id: ID) => ContextSignal<any> | undefined, observed_id: FROM_ID, observer_id?: TO_ID | UNTRACKED_ID) => {
 	const
 		observed_signal = all_signals_get(observed_id)!,
 		observer_signal = observer_id ? all_signals_get(observer_id)! : { name: "untracked" }

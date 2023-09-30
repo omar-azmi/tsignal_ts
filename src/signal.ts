@@ -11,21 +11,66 @@
 // - `List<V> extends BaseSignalClass<[new_value: V | undefined, mutated_index: V, list: List<V>["list"]]>` . the `undefined` in `new_value: V | undefined` exemplifies the case in which a value gets deleted
 // - `DictMemo<K, V>(fn: (observed_id?: ID) => [changed_value: V, changed_key: K, dict: DictMemo<K, V>["dict"])] ) extends Dict<K, V> //with computation + memorization`
 
-import { assign_fn_to_object } from "./funcdefs.ts"
-import { Accessor, BaseSignalClass, BaseSignalConfig, ID, Setter, SignalUpdateStatus, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.ts"
+import { assign_fn_to_object, default_equality, falsey_equality } from "./funcdefs.ts"
+import { Accessor, SimpleSignalConfig, ID, Setter, SignalUpdateStatus, TO_ID, UNTRACKED_ID, Updater, ContextSignal, ContextSignalClassRecord, EqualityFn } from "./typedefs.ts"
 
-/** type definition for an accessor and setter pair, which is what is returned by {@link createSignal} */
-export type AccessorSetter<T> = [Accessor<T>, Setter<T>]
+export type SimpleSignalClass<T> = ReturnType<typeof SimpleSignal_Factory<T>>
+export type SimpleSignal<T> = InstanceType<SimpleSignalClass<T>>
+export const SimpleSignal_Factory = <S = any>(context_classes: ContextSignalClassRecord) => {
+	const base_class = context_classes["$ContextSignal"] as typeof ContextSignal
+	return class <T extends S> extends base_class<T> {
+		static $name: keyof ContextSignalClassRecord = "$SimpleSignal"
+		declare id: ID
+		declare rid: ID | UNTRACKED_ID
+		declare name?: string
+		declare equals: EqualityFn<T>
+		declare fn?: (observer_id: TO_ID | UNTRACKED_ID) => (T | Updater<T>) | any
 
-export const StateSignal_Factory = (base_signal_class: typeof BaseSignalClass) => {
-	const fireID = base_signal_class.fireID
-	return class StateSignal<T> extends base_signal_class<T> {
+		constructor(
+			public value?: T,
+			{
+				name,
+				equals,
+			}: SimpleSignalConfig<T> = {},
+		) {
+			super()
+			this.name = name
+			this.equals = equals === false ? falsey_equality : (equals ?? default_equality)
+		}
+
+		get(observer_id?: TO_ID | UNTRACKED_ID): T {
+			super.get(observer_id)
+			return this.value as T
+		}
+
+		set(new_value: T | Updater<T>): boolean {
+			const old_value = this.value
+			return !this.equals(old_value, (
+				this.value = typeof new_value === "function" ?
+					(new_value as Updater<T>)(old_value) :
+					new_value
+			))
+		}
+
+		run(): SignalUpdateStatus {
+			return SignalUpdateStatus.UPDATED
+		}
+	}
+}
+
+export type StateSignalClass<T> = ReturnType<typeof StateSignal_Factory<T>>
+export type StateSignal<T> = InstanceType<StateSignalClass<T>>
+export const StateSignal_Factory = <S = any>(context_classes: ContextSignalClassRecord) => {
+	const base_class = context_classes["$SimpleSignal"] as SimpleSignalClass<S>
+	const fireID = base_class.fireID
+	return class StateSignal<T extends S> extends base_class<T> {
+		static $name: keyof ContextSignalClassRecord = "$StateSignal"
 		declare value: T
 		declare fn: never
 
 		constructor(
 			value: T,
-			config?: BaseSignalConfig<T>,
+			config?: SimpleSignalConfig<T>,
 		) {
 			super(value, config)
 		}
@@ -40,7 +85,7 @@ export const StateSignal_Factory = (base_signal_class: typeof BaseSignalClass) =
 			return false
 		}
 
-		static create<T>(value: T, config?: BaseSignalConfig<T>): [idState: ID, getState: Accessor<T>, setState: Setter<T>] {
+		static create<T extends S>(value: T, config?: SimpleSignalConfig<T>): [idState: ID, getState: Accessor<T>, setState: Setter<T>] {
 			const new_signal = new this(value, config)
 			return [
 				new_signal.id,
@@ -54,13 +99,17 @@ export const StateSignal_Factory = (base_signal_class: typeof BaseSignalClass) =
 /** type definition for a memorizable function. to be used as a call parameter for {@link createMemo} */
 export type MemoFn<T> = (observer_id: TO_ID | UNTRACKED_ID) => T | Updater<T>
 
-export const MemoSignal_Factory = (base_signal_class: typeof BaseSignalClass) => {
-	return class MemoSignal<T> extends base_signal_class<T> {
+export type MemoSignalClass<T> = ReturnType<typeof MemoSignal_Factory<T>>
+export type MemoSignal<T> = InstanceType<MemoSignalClass<T>>
+export const MemoSignal_Factory = <S = any>(context_classes: ContextSignalClassRecord) => {
+	const base_class = context_classes["$SimpleSignal"] as SimpleSignalClass<S>
+	return class MemoSignal<T extends S> extends base_class<T> {
+		static $name: keyof ContextSignalClassRecord = "$MemoSignal"
 		declare fn: MemoFn<T>
 
 		constructor(
 			fn: MemoFn<T>,
-			config?: BaseSignalConfig<T>,
+			config?: SimpleSignalConfig<T>,
 		) {
 			super(config?.value, config)
 			assign_fn_to_object(this, fn)
@@ -81,7 +130,7 @@ export const MemoSignal_Factory = (base_signal_class: typeof BaseSignalClass) =>
 				SignalUpdateStatus.UNCHANGED
 		}
 
-		static create<T>(fn: MemoFn<T>, config?: BaseSignalConfig<T>): [idMemo: ID, getMemo: Accessor<T>] {
+		static create<T extends S>(fn: MemoFn<T>, config?: SimpleSignalConfig<T>): [idMemo: ID, getMemo: Accessor<T>] {
 			const new_signal = new this(fn, config)
 			return [
 				new_signal.id,
@@ -91,15 +140,18 @@ export const MemoSignal_Factory = (base_signal_class: typeof BaseSignalClass) =>
 	}
 }
 
-
-export const LazySignal_Factory = (base_signal_class: typeof BaseSignalClass) => {
-	return class LazySignal<T> extends base_signal_class<T> {
+export type LazySignalClass<T> = ReturnType<typeof LazySignal_Factory<T>>
+export type LazySignal<T> = InstanceType<LazySignalClass<T>>
+export const LazySignal_Factory = <S = any>(context_classes: ContextSignalClassRecord) => {
+	const base_class = context_classes["$SimpleSignal"] as SimpleSignalClass<S>
+	return class LazySignal<T extends S> extends base_class<T> {
+		static $name: keyof ContextSignalClassRecord = "$LazySignal"
 		declare fn: MemoFn<T>
 		declare dirty: 0 | 1
 
 		constructor(
 			fn: MemoFn<T>,
-			config?: BaseSignalConfig<T>,
+			config?: SimpleSignalConfig<T>,
 		) {
 			super(config?.value, config)
 			assign_fn_to_object(this, fn)
@@ -120,7 +172,7 @@ export const LazySignal_Factory = (base_signal_class: typeof BaseSignalClass) =>
 			return super.get(observer_id)
 		}
 
-		static create<T>(fn: MemoFn<T>, config?: BaseSignalConfig<T>): [idLazy: ID, getLazy: Accessor<T>] {
+		static create<T extends S>(fn: MemoFn<T>, config?: SimpleSignalConfig<T>): [idLazy: ID, getLazy: Accessor<T>] {
 			const new_signal = new this(fn, config)
 			return [
 				new_signal.id,
@@ -143,17 +195,18 @@ export type EffectFn = (observer_id: TO_ID | UNTRACKED_ID) => void | undefined |
 */
 export type EffectEmitter = () => boolean
 
-/** type definition for an effect accessor (ie for registering as an observer) and an effect forceful-emitter pair, which is what is returned by {@link createEffect} */
-export type AccessorEmitter = [Accessor<void>, EffectEmitter]
-
-export const EffectSignal_Factory = (base_signal_class: typeof BaseSignalClass) => {
-	const fireID = base_signal_class.fireID
-	return class EffectSignal extends base_signal_class<void> {
+export type EffectSignalClass = ReturnType<typeof EffectSignal_Factory>
+export type EffectSignal = InstanceType<EffectSignalClass>
+export const EffectSignal_Factory = (context_classes: ContextSignalClassRecord) => {
+	const base_class = context_classes["$SimpleSignal"] as SimpleSignalClass<void>
+	const fireID = base_class.fireID
+	return class EffectSignal extends base_class<void> {
+		static $name: keyof ContextSignalClassRecord = "$EffectSignal"
 		declare fn: EffectFn
 
 		constructor(
 			fn: EffectFn,
-			config?: BaseSignalConfig<void>,
+			config?: SimpleSignalConfig<void>,
 		) {
 			super(undefined, config)
 			assign_fn_to_object(this, fn)
@@ -183,7 +236,7 @@ export const EffectSignal_Factory = (base_signal_class: typeof BaseSignalClass) 
 				SignalUpdateStatus.UNCHANGED
 		}
 
-		static create(fn: EffectFn, config?: BaseSignalConfig<void>): [idEffect: ID, dependOnEffect: Accessor<void>, fireEffect: EffectEmitter] {
+		static create(fn: EffectFn, config?: SimpleSignalConfig<void>): [idEffect: ID, dependOnEffect: Accessor<void>, fireEffect: EffectEmitter] {
 			const new_signal = new this(fn, config)
 			return [
 				new_signal.id,

@@ -1,12 +1,13 @@
 /** */
 
 import { createContext } from "./context.ts"
-import { EffectSignal_Factory, LazySignal_Factory, MemoSignal_Factory, StateSignal_Factory } from "./signal.ts"
+import { EffectSignal_Factory, LazySignal_Factory, MemoSignal_Factory, SimpleSignal_Factory, StateSignal_Factory } from "./signal.ts"
 
 const {
 	create: { createState, createMemo, createLazy, createEffect },
-	dynamic: { setValue, setEquals, setFn }
+	dynamic: { setValue, setEquals, setFn },
 } = createContext({
+	"_": SimpleSignal_Factory,
 	"createState": StateSignal_Factory,
 	"createMemo": MemoSignal_Factory,
 	"createLazy": LazySignal_Factory,

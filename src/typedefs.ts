@@ -30,17 +30,25 @@ export type Setter<T> = ((new_value: T | Updater<T>) => boolean)
 */
 export type Runner = () => SignalUpdateStatus
 
-export interface Signal<T> {
-	get: Accessor<T>
-	set: (...args: any[]) => boolean
-	//Setter<T> | ((...args: any[]) => boolean)
-	run: Runner
+export declare class ContextSignal<T> {
 	id: number
 	rid: ID | UNTRACKED_ID
 	name?: string
+	get(observer_id?: TO_ID | UNTRACKED_ID): T
+	set(...args: any[]): boolean
+	run(): SignalUpdateStatus
+	bindMethod<M extends keyof this>(method_name: M): this[M]
+	static create<T>(...args: any[]): [id: ID, ...any[]]
+	static fireID(id: ID): boolean
+	/** class name of this signal. used for registering this class into the current context */
+	static $name: keyof ContextSignalClassRecord
+	/** register this signal class into the current context (with the name `this.$name`) */
+	// static $register(): void
 }
 
-export interface BaseSignalConfig<T> {
+export type ContextSignalClassRecord = Record<`$${string}`, typeof ContextSignal>
+
+export interface SimpleSignalConfig<T> {
 	/** give a name to the signal for debuging purposes */
 	name?: string
 
@@ -68,23 +76,24 @@ export interface BaseSignalConfig<T> {
 	 * all identifiable signal accessor/setter/emmiter functions can have their properties modified externally and dynamically. <br>
 	 * but doing so may be an anti-pattern, especially if the return types differ from the original. <br>
 	 * dynamic properties of particular interest to the end-user may include:
-	 * - {@link BaseSignalClass.value}
-	 * - {@link BaseSignalClass.equals}
-	 * - {@link BaseSignalClass.fn}
-	 * note that it is the static {@link BaseSignalClass.create} function of a signal's class that should assign identification to the signal-bound accessor/setter/emmiter functions. <br>
+	 * - {@link SimpleSignalClass.value}
+	 * - {@link SimpleSignalClass.equals}
+	 * - {@link SimpleSignalClass.fn}
+	 * note that it is the static {@link SimpleSignalClass.create} function of a signal's class that should assign identification to the signal-bound accessor/setter/emmiter functions. <br>
 	 * in general, you would want to call the `BaseSignalClass`'s static `create` method, which serves this very purpose.
 	*/
 	dynamic?: boolean
 }
 
-export declare class BaseSignalClass<T> implements Signal<T> {
+/*
+export declare class SimpleSignalClass<T> implements ContextSignal<T> {
 	id: ID
 	rid: ID | UNTRACKED_ID
 	name?: string
 	value?: T
 	equals: EqualityFn<T>
 	fn?: (observer_id: TO_ID | UNTRACKED_ID) => (T | Updater<T> | boolean | void)
-	constructor(value?: T, config?: BaseSignalConfig<T>)
+	constructor(value?: T, config?: SimpleSignalConfig<T>)
 	get(observer_id?: TO_ID | UNTRACKED_ID): T
 	set(new_value: T | Updater<T>): boolean
 	run(): SignalUpdateStatus
@@ -97,14 +106,14 @@ export declare class BaseMappedSignalClass<
 	K extends PropertyKey,
 	V,
 	DELTA_MAP extends [record: Record<K, V>, ...changed_keys: Array<K>] = any,
-> implements Signal<DELTA_MAP> {
+> implements ContextSignal<DELTA_MAP> {
 	id: ID
 	rid: ID | UNTRACKED_ID
 	name?: string
 	value?: DELTA_MAP
 	equals: EqualityFn<V>
 	fn?: (observer_id: TO_ID | UNTRACKED_ID) => (DELTA_MAP | Updater<DELTA_MAP>)
-	constructor(record_wrapped?: [Record<K, V>], config?: BaseSignalConfig<DELTA_MAP>)
+	constructor(record_wrapped?: [Record<K, V>], config?: SimpleSignalConfig<DELTA_MAP>)
 	get(observer_id?: TO_ID | UNTRACKED_ID): DELTA_MAP
 	set(key: K, new_value: V | Updater<V>): boolean
 	run(): SignalUpdateStatus
@@ -112,6 +121,7 @@ export declare class BaseMappedSignalClass<
 	static create<T>(...args: any[]): any
 	static fireID(id: ID): boolean
 }
+*/
 
 export const enum SignalUpdateStatus {
 	ABORTED = -1,
