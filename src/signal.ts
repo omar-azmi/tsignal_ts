@@ -6,11 +6,6 @@
  * Yogatta! hontoni ureshii desu. <br>
 */
 
-// TODO: implement the following kinds of signals: `DictState` (or just `Dict`), `ListState` (or just `List`), `DictMemo`, and `ListMemo`
-// - `Dict<K, V> extends SimpleSignal<[new_value: V | undefined, mutated_key: K, dict: Dict<K, V>["dict"]]>` . the `undefined` in `new_value: V | undefined` exemplifies the case in which a key gets deleted
-// - `List<V> extends SimpleSignal<[new_value: V | undefined, mutated_index: V, list: List<V>["list"]]>` . the `undefined` in `new_value: V | undefined` exemplifies the case in which a value gets deleted
-// - `DictMemo<K, V>(fn: (observed_id?: ID) => [changed_value: V, changed_key: K, dict: DictMemo<K, V>["dict"])] ) extends Dict<K, V> //with computation + memorization`
-
 import { Context } from "./context.ts"
 import { DEBUG, StaticImplements, bindMethodToSelfByName } from "./deps.ts"
 import { default_equality, falsey_equality, log_get_request } from "./funcdefs.ts"
@@ -39,18 +34,6 @@ export interface SimpleSignalConfig<T> {
 	 * so that you don't get an `undefined` as the `prev_value` on the very first comparison.
 	*/
 	value?: T
-
-	/** specify if the signal is _dynamic_, and therefore _identifiable_. <br>
-	 * all identifiable signal accessor/setter/emmiter functions can have their properties modified externally and dynamically. <br>
-	 * but doing so may be an anti-pattern, especially if the return types differ from the original. <br>
-	 * dynamic properties of particular interest to the end-user may include:
-	 * - {@link SimpleSignal.value}
-	 * - {@link SimpleSignal.equals}
-	 * - {@link SimpleSignal.fn}
-	 * note that it is the static {@link SimpleSignal.create} function of a signal's class that should assign identification to the signal-bound accessor/setter/emmiter functions. <br>
-	 * in general, you would want to call the `SimpleSignal`'s static `create` method, which serves this very purpose.
-	*/
-	dynamic?: boolean
 }
 
 export type SimpleSignalInstance = InstanceType<ReturnType<typeof SimpleSignal_Factory>>

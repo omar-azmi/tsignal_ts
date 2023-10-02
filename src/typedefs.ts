@@ -46,21 +46,6 @@ export interface SignalClass {
 }
 
 /*
-export declare class SimpleSignal<T> implements Signal<T> {
-	id: ID
-	rid: ID | UNTRACKED_ID
-	name?: string
-	value?: T
-	equals: EqualityFn<T>
-	fn?: (observer_id: TO_ID | UNTRACKED_ID) => (T | Updater<T> | boolean | void)
-	constructor(value?: T, config?: SimpleSignalConfig<T>)
-	get(observer_id?: TO_ID | UNTRACKED_ID): T
-	set(new_value: T | Updater<T>): boolean
-	run(): SignalUpdateStatus
-	bindMethod<M extends keyof this>(method_name: M): this[M]
-	static create<T>(...args: any[]): [id: ID, ...any[]]
-}
-
 export declare class BaseMappedSignalClass<
 	K extends PropertyKey,
 	V,
