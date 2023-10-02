@@ -4,7 +4,7 @@ import { EqualityCheck, EqualityFn, FROM_ID, HASHED_IDS, ID, Signal, TO_ID, UNTR
 export const default_equality = (<T>(v1: T, v2: T) => (v1 === v2)) satisfies EqualityFn<any>
 export const falsey_equality = (<T>(v1: T, v2: T) => false) satisfies EqualityFn<any>
 
-/** transforms a regular equality check function ({@link BaseSignalConfig.equals}) into a one that throttles when called too frequently. <br>
+/** transforms a regular equality check function ({@link SimpleSignalConfig.equals}) into a one that throttles when called too frequently. <br>
  * this means that a singal composed of this as its `equals` function will limit propagating itself further, until at least `delta_time_ms`
  * amount of time has passed since the last time it was potentially propagated.
  * 

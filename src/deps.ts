@@ -25,3 +25,7 @@ export const {
 	keys: object_keys,
 	values: object_values,
 } = Object
+
+export type StaticImplements<CONSTRUCTOR extends new (...args: any[]) => any, CLASS extends CONSTRUCTOR> = InstanceType<CONSTRUCTOR>
+
+export type SubPropertyMapper<T, PROP extends keyof T[keyof T]> = { [K in keyof T]: T[K][PROP] }
