@@ -1,17 +1,15 @@
 /** */
 
-import { createContext } from "./context.ts"
+import { Context } from "./context.ts"
 import { EffectSignal_Factory, LazySignal_Factory, MemoSignal_Factory, StateSignal_Factory } from "./signal.ts"
 
-const {
-	create: { createState, createMemo, createLazy, createEffect },
-	dynamic: { setValue, setEquals, setFn }
-} = createContext({
-	"createState": StateSignal_Factory,
-	"createMemo": MemoSignal_Factory,
-	"createLazy": LazySignal_Factory,
-	"createEffect": EffectSignal_Factory,
-})
+const
+	ctx = new Context(),
+	createState = ctx.addClass(StateSignal_Factory),
+	createMemo = ctx.addClass(MemoSignal_Factory),
+	createLazy = ctx.addClass(LazySignal_Factory),
+	createEffect = ctx.addClass(EffectSignal_Factory),
+	setFn = ctx.dynamic.setFn
 
 const
 	[, A, setA] = createState(1, { name: "A" }),
@@ -39,7 +37,7 @@ for (let A_value = 0; A_value < 100_000; A_value++) {
 	setA(A_value)
 }
 let end = performance.now()
-console.log("time:\t", end - start, " ms") // takes 160ms to 220ms for updating signal `A` 100_000 times (with `DEBUG` off) (dfs nodes to update/visit are cached after first run)
+console.log("time:\t", end - start, " ms") // takes 70ms to 130ms for updating signal `A` 100_000 times (with `DEBUG` off) (dfs nodes to update/visit are cached after first run)
 
 setA(10)
 setB(10)
