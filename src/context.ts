@@ -3,19 +3,7 @@ import { hash_ids } from "./funcdefs.ts"
 import { EffectFn, MemoFn, SimpleSignalInstance } from "./signal.ts"
 import { EqualityFn, FROM_ID, HASHED_IDS, ID, Signal, SignalClass, SignalUpdateStatus, TO_ID, UNTRACKED_ID } from "./typedefs.ts"
 
-// [DONE] TODO: INLINE BaseSignal class into createContext
-// [DONE, see `SignalContext_Batch`] TODO: return `startBatching`, `endBatching`, and `scopedBatching` for every `createContext`'s return object
-// [DONE, see `SignalContext_Dynamic`] TODO: implement `assign_fn_to_object` and etc.. with the intent of having the end user use it to dynamically modify `MemoFn`. this function must also be exported by the context
-// [DONE, see `SignalContext`] in fact, consider having a `Context` class or object interface, which will include `createXYZSignal`s in a `signals` subproperty, `*Batching` in a `batch` subproperty, and (`changeFn` | `changeEffect` | etc...) in either a `dynamic` or `change` subproperty
-// [DONE, see `InstanceType<SimpleSignal>.bindMethod` and its `dynamic?: boolean` parameter] also, signals which do not intend to be dynamic should not assign an `id` property to their `Accessor<T>` or `Setter<T>` or `Emmiter` (bound) functions
-// [DONE] TODO: import `bindMethodToSelfByName` directly from `kitchensink_ts/binder.ts`, now that it has implemented it
-// [DONE] TODO: move `SimpleSignalInstance`, and `BaseSignalConfig` to `typedefs.ts`
 // TODO: implement signal swapping (with either a new signal (and the old one gets deleted), or an existing one). for a signal to be swappable, it must be of dynamic kind (ie carries `SelfIdentification`)
-// [DONE, see `Context.runId`] TODO: find a better name/more descriptive name for `fireID` and `SimpleSignalInstance.fireID`
-// [DONE, we now use `(ctx: Context) => SignalClass` for class factory + inheritance] TODO: figure out a better inheritance structure. currently, it is difficult to factory a subtype from an existing signal_class_factory's output, unless it is the SimpleSignalInstance that we're talking about.
-//	best case suggestion: somehow uncouple signal classes from their context, which would allow one to write out the signal classes as standalone classes (ie top level, not factory-closure bound)
-//	possibly, make a context class, which itself provides an interface for signals to react.
-//	or, make abstraction of "contextless" signal classes, which are then wapped over a "contextful" signal class to be useful
 
 export interface Context_Dynamic {
 	setValue: <T>(id: ID, new_value: T) => void,
@@ -195,6 +183,9 @@ export class Context {
 			return false
 		}
 
+		// we keep track of the signal classes returned by the factories and memorize them
+		// this simplifies inheritance by a lot, and this way, you do not explicitly have to `addClass` of super classes
+		// you can directly `addClass` of a subtype that has currently not been added, and that class with then automatically be added (via its factory function)
 		const
 			class_record: Map<(ctx: Context) => SignalClass, SignalClass> = new Map(),
 			class_record_get = bind_map_get(class_record),
@@ -212,7 +203,9 @@ export class Context {
 			class_record_set(factory_fn, signal_class)
 			return signal_class
 		}
+
 		this.batch = { startBatching, endBatching, scopedBatching }
+
 		this.dynamic = {
 			setValue: <T>(id: ID, new_value: T) => {
 				const signal = all_signals_get(id ?? 0 as UNTRACKED_ID) as SimpleSignalInstance | undefined
