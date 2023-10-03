@@ -49,6 +49,8 @@ export const SimpleSignal_Factory = (ctx: Context) => {
 		declare value?: T
 		declare equals: EqualityFn<T>
 		declare fn?: (observer_id: TO_ID | UNTRACKED_ID) => (T | Updater<T>) | any
+		prerun?(): any
+		postrun?(): any
 
 		constructor(
 			value?: T,
@@ -105,6 +107,8 @@ export const StateSignal_Factory = (ctx: Context) => {
 	return class StateSignal<T> extends ctx.getClass(SimpleSignal_Factory)<T> {
 		declare value: T
 		declare fn: never
+		declare prerun: never
+		declare postrun: never
 
 		constructor(
 			value: T,
@@ -140,6 +144,8 @@ export type MemoFn<T> = (observer_id: TO_ID | UNTRACKED_ID) => T | Updater<T>
 export const MemoSignal_Factory = (ctx: Context) => {
 	return class MemoSignal<T> extends ctx.getClass(SimpleSignal_Factory)<T> {
 		declare fn: MemoFn<T>
+		declare prerun: never
+		declare postrun: never
 
 		constructor(
 			fn: MemoFn<T>,
@@ -179,6 +185,8 @@ export const LazySignal_Factory = (ctx: Context) => {
 	return class LazySignal<T> extends ctx.getClass(SimpleSignal_Factory)<T> {
 		declare fn: MemoFn<T>
 		declare dirty: 0 | 1
+		declare prerun: never
+		declare postrun: never
 
 		constructor(
 			fn: MemoFn<T>,
@@ -230,6 +238,8 @@ export const EffectSignal_Factory = (ctx: Context) => {
 	const runId = ctx.runId
 	return class EffectSignal extends ctx.getClass(SimpleSignal_Factory)<void> {
 		declare fn: EffectFn
+		declare prerun: never
+		declare postrun: never
 
 		constructor(
 			fn: EffectFn,

@@ -36,7 +36,9 @@ export interface Signal<T> {
 	name?: string
 	get(observer_id?: TO_ID | UNTRACKED_ID): T
 	set(...args: any[]): boolean
+	prerun?(): void
 	run(): SignalUpdateStatus
+	postrun?(): void
 	bindMethod<M extends keyof this>(method_name: M): this[M]
 }
 
@@ -44,27 +46,6 @@ export interface SignalClass {
 	new(...args: any[]): Signal<any>
 	create(...args: any[]): [id: ID, ...any[]]
 }
-
-/*
-export declare class BaseMappedSignalClass<
-	K extends PropertyKey,
-	V,
-	DELTA_MAP extends [record: Record<K, V>, ...changed_keys: Array<K>] = any,
-> implements Signal<DELTA_MAP> {
-	id: ID
-	rid: ID | UNTRACKED_ID
-	name?: string
-	value?: DELTA_MAP
-	equals: EqualityFn<V>
-	fn?: (observer_id: TO_ID | UNTRACKED_ID) => (DELTA_MAP | Updater<DELTA_MAP>)
-	constructor(record_wrapped?: [Record<K, V>], config?: SimpleSignalConfig<DELTA_MAP>)
-	get(observer_id?: TO_ID | UNTRACKED_ID): DELTA_MAP
-	set(key: K, new_value: V | Updater<V>): boolean
-	run(): SignalUpdateStatus
-	bindMethod<M extends keyof this>(method_name: M, dynamic?: boolean): this[M]
-	static create<T>(...args: any[]): any
-}
-*/
 
 export const enum SignalUpdateStatus {
 	ABORTED = -1,

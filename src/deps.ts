@@ -2,6 +2,7 @@ export {
 	bindMethodToSelfByName,
 	bind_array_clear,
 	bind_array_push,
+	bind_array_pop,
 	bind_map_clear,
 	bind_map_get,
 	bind_map_set,
