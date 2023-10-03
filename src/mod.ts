@@ -1,6 +1,7 @@
 /** */
 
 import { Context } from "./context.ts"
+import { RecordSignal_Factory } from "./mapped_signal.ts"
 import { EffectSignal_Factory, LazySignal_Factory, MemoSignal_Factory, StateSignal_Factory } from "./signal.ts"
 
 const
@@ -9,6 +10,7 @@ const
 	createMemo = ctx.addClass(MemoSignal_Factory),
 	createLazy = ctx.addClass(LazySignal_Factory),
 	createEffect = ctx.addClass(EffectSignal_Factory),
+	createRecord = ctx.addClass(RecordSignal_Factory),
 	setFn = ctx.dynamic.setFn
 
 const
@@ -30,6 +32,8 @@ K()
 fireK()
 setFn(idK, () => { console.log("effect K is now free of all worldy dependencies, yet it is still fired when one of its previous dependiencies are updated. so saj...") })
 fireK()
+
+const [idL, getL, setL, setsL, delL, delsL] = createRecord<number, string>(["1", "2", "3", "abc"])
 
 /*
 let start = performance.now()
