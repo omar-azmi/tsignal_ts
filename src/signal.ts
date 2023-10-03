@@ -28,7 +28,9 @@ export interface SimpleSignalConfig<T> {
 	 * that have not been defined yet, in which case an error will be raised, unless you choose to defer the first execution. <br>
 	*/
 	defer?: boolean
+}
 
+export interface MemoSignalConfig<T> extends SimpleSignalConfig<T> {
 	/** initial value declaration for reactive signals. <br>
 	 * its purpose is only to be used as a previous value (`prev_value`) for the optional `equals` equality function,
 	 * so that you don't get an `undefined` as the `prev_value` on the very first comparison.
@@ -44,11 +46,12 @@ export const SimpleSignal_Factory = (ctx: Context) => {
 		declare id: ID
 		declare rid: ID | UNTRACKED_ID
 		declare name?: string
+		declare value?: T
 		declare equals: EqualityFn<T>
 		declare fn?: (observer_id: TO_ID | UNTRACKED_ID) => (T | Updater<T>) | any
 
 		constructor(
-			public value?: T,
+			value?: T,
 			{
 				name,
 				equals,
@@ -60,6 +63,7 @@ export const SimpleSignal_Factory = (ctx: Context) => {
 			this.id = id
 			this.rid = id
 			this.name = name
+			this.value = value
 			this.equals = equals === false ? falsey_equality : (equals ?? default_equality)
 		}
 
@@ -139,7 +143,7 @@ export const MemoSignal_Factory = (ctx: Context) => {
 
 		constructor(
 			fn: MemoFn<T>,
-			config?: SimpleSignalConfig<T>,
+			config?: MemoSignalConfig<T>,
 		) {
 			super(config?.value, config)
 			this.fn = fn
@@ -178,7 +182,7 @@ export const LazySignal_Factory = (ctx: Context) => {
 
 		constructor(
 			fn: MemoFn<T>,
-			config?: SimpleSignalConfig<T>,
+			config?: MemoSignalConfig<T>,
 		) {
 			super(config?.value, config)
 			this.fn = fn

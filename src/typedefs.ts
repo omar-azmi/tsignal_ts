@@ -34,15 +34,15 @@ export interface Signal<T> {
 	id: number
 	rid: ID | UNTRACKED_ID
 	name?: string
-	get(observer_id?: TO_ID | UNTRACKED_ID): T | void
+	get(observer_id?: TO_ID | UNTRACKED_ID): T
 	set(...args: any[]): boolean
 	run(): SignalUpdateStatus
 	bindMethod<M extends keyof this>(method_name: M): this[M]
 }
 
 export interface SignalClass {
-	new <T>(...args: any[]): Signal<T>
-	create<T>(...args: any[]): [id: ID, ...any[]]
+	new(...args: any[]): Signal<any>
+	create(...args: any[]): [id: ID, ...any[]]
 }
 
 /*
