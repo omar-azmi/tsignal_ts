@@ -11,7 +11,11 @@ const site_root = Deno.args[0] ?? "/"
 const npm_dir = "./npm/"
 const main_entrypoint: string = "./src/mod.ts"
 const sub_entrypoints: string[] = [
+	"./src/context.ts",
 	"./src/signal.ts",
+	"./src/mapped_signal.ts",
+	"./src/funcdefs.ts",
+	"./src/typedefs.ts",
 ]
 const tsconfig = {
 	"$schema": "https://json.schemastore.org/tsconfig",

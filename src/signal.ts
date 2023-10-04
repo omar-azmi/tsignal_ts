@@ -1,15 +1,14 @@
-/** LALI-HOO!! <br>
- * _Yare Yare Daze_ ... Code wa doko ni? ehh? <br>
- * Mou daijoubu! Naze tte? Code wa kita, hai dozo. <br>
- * Maji desu ka? <br>
- * Hai! unmei desu! <br>
- * Yogatta! hontoni ureshii desu. <br>
+/** a equal-calorie clone of the popular reactivity library [SolidJS](https://github.com/solidjs/solid). <br>
+ * @module
 */
 
 import { Context } from "./context.ts"
 import { DEBUG, StaticImplements, bindMethodToSelfByName } from "./deps.ts"
 import { default_equality, falsey_equality, log_get_request } from "./funcdefs.ts"
 import { Accessor, EqualityCheck, EqualityFn, ID, Setter, SignalClass, SignalUpdateStatus, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.ts"
+
+// TODO: add `SimpleSignalConfig.deps: ID[]` option to manually enforce dependance on certain signal ids. this can be useful when you want a
+//	signal to defer its first run, yet you also want that signal to react to any of its dependencies, before this signal ever gets run
 
 export interface SimpleSignalConfig<T> {
 	/** give a name to the signal for debuging purposes */

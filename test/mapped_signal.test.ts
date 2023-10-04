@@ -80,37 +80,41 @@ GET:	BoundingBoxMemo	by OBSERVER:	untracked		with VALUE	{minY: 2000, minX: 2000,
 undefined
 */
 
-setRect(1, { top: 10, left: 10, bottom: 990, right: 100 })
-/** ### CONSOLE
-UPDATE_CYCLE	visiting   :	AllRects
-UPDATE_CYCLE	propagating:	AllRects
-UPDATE_CYCLE	visiting   :	AllLegalRects
-GET:	AllRects		by OBSERVER:	untracked		with VALUE	(2) [Array(2), 1]
-UPDATE_CYCLE	 propagating:	AllLegalRects
-UPDATE_CYCLE	 visiting   :	BoundingBoxMemo
-GET:	AllLegalRects	by OBSERVER:	untracked		with VALUE	(2) [Array(2), 1]
-bounding box update: {minY: 10, minX: 10, maxY: 990, maxX: 100}
-UPDATE_CYCLE	propagating:	BoundingBoxMemo
-UPDATE_POSTRUNS:	(2) [2, 3]
-true
-*/
+Deno.test("1", () => {
+	setRect(1, { top: 10, left: 10, bottom: 990, right: 100 })
+	/** ### CONSOLE
+	UPDATE_CYCLE	visiting   :	AllRects
+	UPDATE_CYCLE	propagating:	AllRects
+	UPDATE_CYCLE	visiting   :	AllLegalRects
+	GET:	AllRects		by OBSERVER:	untracked		with VALUE	(2) [Array(2), 1]
+	UPDATE_CYCLE	propagating:	AllLegalRects
+	UPDATE_CYCLE	visiting   :	BoundingBoxMemo
+	GET:	AllLegalRects	by OBSERVER:	untracked		with VALUE	(2) [Array(2), 1]
+	bounding box update: {minY: 10, minX: 10, maxY: 990, maxX: 100}
+	UPDATE_CYCLE	propagating:	BoundingBoxMemo
+	UPDATE_POSTRUNS:	(2) [2, 3]
+	true
+	*/
+})
 
-ctx.batch.startBatching()
-setRect(0, { top: 10, left: 10, bottom: 990, right: 100 })
-setRect(2, { top: 500, left: 100, bottom: 300, right: 800 }) // this rect is illegal
-setRect(3, { top: 500, left: 500, bottom: 800, right: 800 })
-ctx.batch.endBatching()
-/**
-UPDATE_CYCLE	visiting   :	AllRects
-UPDATE_CYCLE	propagating:	AllRects
-UPDATE_CYCLE	visiting   :	AllLegalRects
-GET:	AllRects		by OBSERVER:	untracked	with VALUE	(4) [Array(4), 0, 2, 3]
-rect 2 is illegal
-UPDATE_CYCLE	propagating:	AllLegalRects
-UPDATE_CYCLE	visiting   :	BoundingBoxMemo
-GET:	AllLegalRects	by OBSERVER:	untracked	with VALUE	(3) [Array(4), 0, 3]
-bounding box update: {minY: 10, minX: 10, maxY: 990, maxX: 800}
-UPDATE_CYCLE	propagating:	BoundingBoxMemo
-UPDATE_POSTRUNS:	(2) [2, 3]
-undefined
-*/
+Deno.test("2", () => {
+	ctx.batch.startBatching()
+	setRect(0, { top: 10, left: 10, bottom: 990, right: 100 })
+	setRect(2, { top: 500, left: 100, bottom: 300, right: 800 }) // this rect is illegal
+	setRect(3, { top: 500, left: 500, bottom: 800, right: 800 })
+	ctx.batch.endBatching()
+	/**
+	UPDATE_CYCLE	visiting   :	AllRects
+	UPDATE_CYCLE	propagating:	AllRects
+	UPDATE_CYCLE	visiting   :	AllLegalRects
+	GET:	AllRects		by OBSERVER:	untracked	with VALUE	(4) [Array(4), 0, 2, 3]
+	rect 2 is illegal
+	UPDATE_CYCLE	propagating:	AllLegalRects
+	UPDATE_CYCLE	visiting   :	BoundingBoxMemo
+	GET:	AllLegalRects	by OBSERVER:	untracked	with VALUE	(3) [Array(4), 0, 3]
+	bounding box update: {minY: 10, minX: 10, maxY: 990, maxX: 800}
+	UPDATE_CYCLE	propagating:	BoundingBoxMemo
+	UPDATE_POSTRUNS:	(2) [2, 3]
+	undefined
+	*/
+})

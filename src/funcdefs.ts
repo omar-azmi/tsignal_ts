@@ -1,4 +1,8 @@
-import { DEBUG, THROTTLE_REJECT, throttle } from "./deps.ts"
+/** utility functions
+ * @module
+*/
+
+import { DEBUG, THROTTLE_REJECT, noop, throttle } from "./deps.ts"
 import { EqualityCheck, EqualityFn, FROM_ID, HASHED_IDS, ID, Signal, TO_ID, UNTRACKED_ID } from "./typedefs.ts"
 
 export const default_equality = (<T>(v1: T, v2: T) => (v1 === v2)) satisfies EqualityFn<any>
@@ -43,8 +47,6 @@ export const hash_ids = (ids: ID[]): HASHED_IDS => {
 	return ids.reduce((sum, id) => sum + id * (id + sqrt_len), 0)
 }
 
-export const noop = /* @__PURE__ */ () => { }
-
 export const log_get_request = /* @__PURE__ */ DEBUG.LOG ? (all_signals_get: (id: ID) => Signal<any> | undefined, observed_id: FROM_ID, observer_id?: TO_ID | UNTRACKED_ID) => {
 	const
 		observed_signal = all_signals_get(observed_id)!,
@@ -52,6 +54,7 @@ export const log_get_request = /* @__PURE__ */ DEBUG.LOG ? (all_signals_get: (id
 	console.log(
 		"GET:\t", observed_signal.name,
 		"\tby OBSERVER:\t", observer_signal.name,
+		// @ts-ignore:
 		"\twith VALUE\t", observed_signal.value,
 	)
 } : noop

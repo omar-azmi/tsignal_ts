@@ -1,3 +1,7 @@
+/** mapped signals <br>
+ * @module
+*/
+
 import { Context } from "./context.ts"
 import { array_isArray, object_keys, object_values } from "./deps.ts"
 import { SimpleSignal_Factory } from "./signal.ts"
@@ -39,7 +43,7 @@ export interface RecordMemoSignalConfig<K extends PropertyKey, V> extends Record
 export const RecordSignal_Factory = (ctx: Context) => {
 	return class RecordSignal<K extends PropertyKey, V> extends ctx.getClass(SimpleSignal_Factory)<[record: Record<K, V>, ...changed_keys: K[]]> {
 		declare value: [record: Record<K, V>, ...changed_keys: K[]]
-		//@ts-ignore:
+		// @ts-ignore:
 		declare equals: EqualityFn<V>
 
 		constructor(
@@ -51,7 +55,7 @@ export const RecordSignal_Factory = (ctx: Context) => {
 				empty_instance_of_record = (record_is_array ? [] : {}) as Record<K, V>,
 				keys = record_is_array ? [...base_record.keys()] : object_keys(base_record),
 				values: V[] = record_is_array ? [...base_record.values()] : object_values(base_record)
-			//@ts-ignore: `RecordSignalConfig` is not a subtype of `SimpleSignalConfig`, but we don't care and just wish to assign `config.equals as EqualityFn<V>`
+			// @ts-ignore: `RecordSignalConfig` is not a subtype of `SimpleSignalConfig`, but we don't care and just wish to assign `config.equals as EqualityFn<V>`
 			super([empty_instance_of_record], config)
 			this.setItems(keys as K[], values, false)
 		}
@@ -75,7 +79,7 @@ export const RecordSignal_Factory = (ctx: Context) => {
 			delta_record.splice(1)
 		}
 
-		//@ts-ignore:
+		// @ts-ignore:
 		set(key: K, new_value: V | Updater<V>, ignore?: boolean): boolean {
 			return this.setItems([key], [new_value], ignore)
 		}

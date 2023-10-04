@@ -1,3 +1,7 @@
+/** base type definitions <br>
+ * @module
+*/
+
 /** type definition for a value equality check function. */
 export type EqualityFn<T> = (prev_value: T | undefined, new_value: T) => boolean
 

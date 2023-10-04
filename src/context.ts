@@ -1,3 +1,7 @@
+/** a context is required for any signal to be functional
+ * @module
+*/
+
 import { DEBUG, bindMethodToSelfByName, bind_array_clear, bind_array_pop, bind_array_push, bind_map_clear, bind_map_get, bind_map_set, bind_set_add, bind_set_clear, bind_set_delete, bind_set_has } from "./deps.ts"
 import { hash_ids } from "./funcdefs.ts"
 import { EffectFn, MemoFn, SimpleSignalInstance } from "./signal.ts"
@@ -178,6 +182,7 @@ export class Context {
 				}
 			}
 		}
+		// @ts-ignore:
 		this.delEdge = undefined
 
 		this.newId = () => {
@@ -188,6 +193,7 @@ export class Context {
 		}
 		this.getId = all_signals_get
 		this.setId = all_signals_set
+		// @ts-ignore:
 		this.delId = undefined
 		this.runId = (id: ID): boolean => {
 			const will_fire_immediately = batch_nestedness <= 0
