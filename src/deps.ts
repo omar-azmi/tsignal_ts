@@ -14,7 +14,6 @@ export {
 export { THROTTLE_REJECT, throttle } from "https://deno.land/x/kitchensink_ts@v0.7.0/browser.ts"
 export { array_isArray, noop, object_assign, object_keys, object_values } from "https://deno.land/x/kitchensink_ts@v0.7.0/builtin_aliases_deps.ts"
 export { prototypeOfClass } from "https://deno.land/x/kitchensink_ts@v0.7.0/struct.ts"
-export * as typedefs from "https://deno.land/x/kitchensink_ts@v0.7.0/typedefs.ts"
 export type { CallableFunctionsOf, ConstructorOf, MethodsOf, StaticImplements } from "https://deno.land/x/kitchensink_ts@v0.7.0/typedefs.ts"
 
 
