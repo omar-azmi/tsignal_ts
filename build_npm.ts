@@ -26,7 +26,7 @@ const tsconfig = {
 		allowJs: true,
 		forceConsistentCasingInFileNames: true,
 		skipLibCheck: true,
-		moduleResolution: "node",
+		moduleResolution: "nodenext",
 	},
 }
 const typedoc = {
@@ -81,31 +81,30 @@ await build({
 	esModule: true,
 	scriptModule: false,
 	test: false,
-	/* importing kitchensink_ts from npm causes a loot of importation headache. it aint worth it
 	mappings: Object.fromEntries(
 		["binder", "browser", "builtin_aliases_deps", "struct", "typedefs",].map((submodule_path) => {
 			return [
 				"https://deno.land/x/kitchensink_ts@v0.7.0/" + submodule_path + ".ts",
 				{
 					name: "kitchensink_ts",
-					version: "^0.7.0",
-					subPath: "esm/" + submodule_path + ".js",
+					version: "*",
+					subPath: submodule_path,
 				}
 			]
 		})
 	)
-	*/
 })
 
 // copy other files
-Deno.writeTextFileSync(npm_dir + ".gitignore", "/node_modules/\n")
 Deno.copyFileSync("./src/readme.md", npm_dir + "src/readme.md")
 Deno.copyFileSync("./src/readme.md", npm_dir + "readme.md")
 Deno.copyFileSync("./src/license.md", npm_dir + "license.md")
 Deno.copyFileSync("./.github/code_of_conduct.md", npm_dir + "code_of_conduct.md")
+Deno.writeTextFileSync(npm_dir + ".gitignore", "/node_modules/\n")
 Deno.writeTextFileSync(npm_dir + "tsconfig.json", JSON.stringify(tsconfig))
 Deno.writeTextFileSync(npm_dir + "typedoc.json", JSON.stringify(typedoc))
 Deno.writeTextFileSync(npm_dir + ".npmignore", `
+code_of_conduct.md
 dist/
 docs/
 test/
