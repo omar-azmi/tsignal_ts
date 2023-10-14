@@ -1,5 +1,5 @@
 import { Context } from "../src/context.ts"
-import { RecordMemoSignal_Factory, RecordStateSignal_Factory } from "../src/mapped_signal.ts"
+import { RecordMemoSignal_Factory, RecordStateSignal_Factory } from "../src/record_signal.ts"
 import { MemoSignal_Factory } from "../src/signal.ts"
 
 type Rect = {

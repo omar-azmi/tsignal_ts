@@ -1,4 +1,4 @@
-/** mapped signals <br>
+/** record signals <br>
  * @module
 */
 
