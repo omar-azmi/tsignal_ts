@@ -86,8 +86,10 @@ export const SimpleSignal_Factory = (ctx: Context) => {
 			))
 		}
 
-		run(): SignalUpdateStatus {
-			return SignalUpdateStatus.UPDATED
+		run(forced?: boolean): SignalUpdateStatus {
+			return forced ?
+				SignalUpdateStatus.UPDATED :
+				SignalUpdateStatus.UNCHANGED
 		}
 
 		bindMethod<M extends keyof this>(method_name: M): this[M] {
@@ -117,7 +119,7 @@ export const StateSignal_Factory = (ctx: Context) => {
 		}
 
 		set(new_value: T | Updater<T>): boolean {
-			// if value has changed, then fire this id to begin or queue a firing cycle
+			// if value has changed, then fire this id to begin/queue a firing cycle
 			const value_has_changed = super.set(new_value)
 			if (value_has_changed) {
 				runId(this.id)
@@ -163,7 +165,8 @@ export const MemoSignal_Factory = (ctx: Context) => {
 			return super.get(observer_id)
 		}
 
-		run(): SignalUpdateStatus {
+		// TODO: consider whether or not MemoSignals should be able to be forced to fire independently
+		run(forced?: boolean): SignalUpdateStatus {
 			return super.set(this.fn(this.rid)) ?
 				SignalUpdateStatus.UPDATED :
 				SignalUpdateStatus.UNCHANGED
@@ -197,7 +200,7 @@ export const LazySignal_Factory = (ctx: Context) => {
 			if (config?.defer === false) { this.get() }
 		}
 
-		run(): SignalUpdateStatus.UPDATED {
+		run(forced?: boolean): SignalUpdateStatus.UPDATED {
 			return (this.dirty = 1)
 		}
 
@@ -264,7 +267,7 @@ export const EffectSignal_Factory = (ctx: Context) => {
 			return effect_will_fire_immediately
 		}
 
-		run(): SignalUpdateStatus {
+		run(forced?: boolean): SignalUpdateStatus {
 			const signal_should_propagate = this.fn(this.rid) !== false
 			if (this.rid) { this.rid = 0 as UNTRACKED_ID }
 			return signal_should_propagate ?

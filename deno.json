@@ -20,9 +20,13 @@
 		"strict": true,
 		"allowJs": true
 	},
+	"dependencies": {
+		"kitchensink_ts": "^0.7.1"
+	},
 	"devDependencies": {
 		"typescript": "^5.0.0",
 		"typedoc": "^0.24.8",
+		"typedoc-plugin-missing-exports": "^2.1.0",
 		"esbuild": "^0.17.19"
 	},
 	"node_packageManager": "npm",
