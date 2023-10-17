@@ -26,6 +26,14 @@ export type Accessor<T> = ((observer_id?: TO_ID | UNTRACKED_ID) => T)
 /** type definition for a signal value setter function. */
 export type Setter<T> = ((new_value: T | Updater<T>) => boolean)
 
+/** type definition for an async signal value setter function. */
+export type AsyncSetter<T> = (
+	new_value:
+		| (T | Promise<T | Updater<T>>)
+		| Updater<T | Promise<T | Updater<T>>>,
+	rejectable?: boolean,
+) => Promise<T>
+
 /** type definition for when a signal's _update_ function `run` is called by the signal update propagator `propagateSignalUpdate` inside of {@link context!Context}. <br>
  * the return value should indicate whether this signal has:
  * - updated ({@link SignalUpdateStatus.UPDATED} === 1), and therefore propagate to its observers to also run

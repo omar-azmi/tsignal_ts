@@ -14,6 +14,7 @@ const sub_entrypoints: string[] = [
 	"./src/context.ts",
 	"./src/signal.ts",
 	"./src/record_signal.ts",
+	"./src/async_signal.ts",
 	"./src/funcdefs.ts",
 	"./src/typedefs.ts",
 ]

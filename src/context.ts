@@ -156,18 +156,18 @@ export class Context {
 				let this_signal_update_status: SignalUpdateStatus = any_updated_dependency
 				if (this_signal_update_status >= SignalUpdateStatus.UPDATED) {
 					this_signal_update_status = this_signal?.run(forced) ?? SignalUpdateStatus.UNCHANGED
-					if (this_signal_update_status >= SignalUpdateStatus.UPDATED) {
-						if (this_signal!.postrun) {
-							postruns_this_cycle_push(id)
-						}
+					/* I think we should ignore batching aborted source-signals here. instead, we should let the source itself handle how it wishes to be batched, or when it wishes to run
+					if (this_signal_update_status <= SignalUpdateStatus.ABORTED) {
+						// we only batch source ids which result in an ABORTED signal, rather than the collateral resulting ABORTED signals as a consequence
+						batched_ids_push(id)
 					}
+					*/
 				}
 				updated_this_cycle_set(id, this_signal_update_status)
 				if (DEBUG.LOG) { console.log("UPDATE_CYCLE\t", this_signal_update_status > 0 ? "propagating:\t" : this_signal_update_status < 0 ? "delaying    \t" : "blocking   :\t", this_signal?.name) }
 				if (this_signal_update_status >= SignalUpdateStatus.UPDATED) {
+					if (this_signal!.postrun) { postruns_this_cycle_push(id) }
 					fmap_get(id)?.forEach(propagateSignalUpdate)
-				} else if (this_signal_update_status <= SignalUpdateStatus.ABORTED) {
-					batched_ids_push(id)
 				}
 			}
 		}
