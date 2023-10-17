@@ -26,7 +26,9 @@ export type Accessor<T> = ((observer_id?: TO_ID | UNTRACKED_ID) => T)
 /** type definition for a signal value setter function. */
 export type Setter<T> = ((new_value: T | Updater<T>) => boolean)
 
-/** type definition for an async signal value setter function. */
+/** type definition for an async signal value setter function. <br>
+ * TODO: should an `AsyncSetter<T>` return a `Promise<T>` ? or should it return a `Promise<boolean>`, which should tell whether or not the value has changed (i.e. `!signal.equal(old_value, new_value)`)
+*/
 export type AsyncSetter<T> = (
 	new_value:
 		| (T | Promise<T | Updater<T>>)

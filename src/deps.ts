@@ -19,3 +19,8 @@ export type { CallableFunctionsOf, ConstructorOf, MethodsOf, StaticImplements } 
 export const enum DEBUG {
 	LOG = 0,
 }
+
+import { noop } from "https://deno.land/x/kitchensink_ts@v0.7.1/builtin_aliases_deps.ts"
+export const promise_resolve = <T>(value: T) => Promise.resolve(value)
+export const promise_reject = <T>(value: T) => Promise.reject(value)
+export const promise_forever = <T>() => new Promise<T>(noop)

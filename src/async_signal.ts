@@ -3,6 +3,7 @@
 */
 
 import { Context } from "./context.ts"
+import { noop, promise_forever, promise_reject, promise_resolve } from "./deps.ts"
 import { SimpleSignalConfig, SimpleSignal_Factory } from "./signal.ts"
 import { Accessor, AsyncSetter, ID, SignalUpdateStatus, Updater } from "./typedefs.ts"
 
@@ -29,48 +30,36 @@ export const AsyncStateSignal_Factory = (ctx: Context) => {
 				| Updater<T | Promise<T | Updater<T>>>,
 			rejectable: boolean = false,
 		): Promise<T> {
-			let
-				resolver: (value: T) => void,
-				rejecter: (reason?: any) => void
-
 			const
 				_this = this,
-				return_promise = new Promise<T>((resolve, reject) => {
-					resolver = resolve
-					if (rejectable) { rejecter = reject }
-				}),
 				new_value_is_updater = (typeof new_value === "function") && !(new_value instanceof Promise)
 			// evaluate the `new_value` based on the updater function applied to the old value `this.value`
-			new_value = new_value_is_updater ?
-				(new_value as Updater<T | Promise<T>>)(_this.value) :
-				new_value
+			new_value = new_value_is_updater ? (new_value as Updater<T | Promise<T>>)(_this.value) : new_value
 			if (new_value instanceof Promise) {
-				(_this.promise = new_value).then(
-					// on promise resolved:
+				return (_this.promise = new_value).then(
+					// on promise resolved
 					(value: T | Updater<T>) => {
-						// our previous pending promise (aka `this.promise`) MUST still equal to `new_value`, otherwise it would mean that a more recent promise has been assigned/set to this AsyncState.
+						// our previous pending promise (aka `this.promise`) MUST still equal to `new_value`'s promise, otherwise it would mean that a more recent promise has been assigned/set to this AsyncState.
 						// we shall only update the underlying `this.value` if and only if the resolved promise also happens to be the most recently assigned/set promise.
 						// if that is not the case (i.e. the resolved promise has turned old because a newer one came around/was set), then we would simply drop the old promise.
 						if (_this.promise === new_value) {
 							_this.promise = undefined
-							_this.setPromise(value as any, rejectable).then(resolver)
+							return _this.setPromise(value as any, rejectable)
 						}
+						return promise_forever()
 					},
-					// on promise rejected:
+					// on promise rejected
 					(reason?: any) => {
-						if (_this.promise === new_value) {
-							_this.promise = undefined
-							rejecter?.(reason)
-						}
+						// TODO: is the check below necessary? would it be harmful in any way if the promise continues to linger around?
+						if (_this.promise === new_value) { _this.promise = undefined }
+						return rejectable ? promise_reject(reason) : promise_forever()
 					}
 				)
-			} else {
-				// the signal update is first propagated, and then the returned promise is resolved with the value we jsut set
-				const value_has_changed = super.set(new_value as T)
-				if (value_has_changed) { runId(this.id) }
-				resolver!(new_value as T)
 			}
-			return return_promise
+			// the signal update is first propagated, and then the returned promise is resolved with the value we jsut set
+			const value_has_changed = super.set(new_value as T)
+			if (value_has_changed) { runId(this.id) }
+			return promise_resolve(new_value as T)
 		}
 
 		run(forced?: boolean | undefined): SignalUpdateStatus {
