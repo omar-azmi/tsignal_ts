@@ -1,6 +1,6 @@
 {
 	"name": "tsignal_ts",
-	"version": "0.1.2-b",
+	"version": "0.1.2-c",
 	"description": "a topological order respecting signals library inspired by SolidJS",
 	"author": "Omar Azmi",
 	"license": "Lulz plz don't steal yet",
@@ -21,7 +21,7 @@
 		"allowJs": true
 	},
 	"dependencies": {
-		"kitchensink_ts": "^0.7.1"
+		"kitchensink_ts": "^0.7.2"
 	},
 	"devDependencies": {
 		"typescript": "^5.0.0",

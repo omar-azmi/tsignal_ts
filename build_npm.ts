@@ -88,10 +88,10 @@ await build({
 	mappings: Object.fromEntries(
 		["binder", "builtin_aliases_deps", "lambda", "struct", "typedefs",].map((submodule_path) => {
 			return [
-				"https://deno.land/x/kitchensink_ts@v0.7.1/" + submodule_path + ".ts",
+				"https://deno.land/x/kitchensink_ts@v0.7.2/" + submodule_path + ".ts",
 				{
 					name: "kitchensink_ts",
-					version: "^v0.7.1",
+					version: "^v0.7.2",
 					subPath: submodule_path,
 				}
 			]
@@ -120,4 +120,5 @@ docs/
 docs_config/
 test/
 tsconfig.json
+typedoc.json
 `, { append: true })

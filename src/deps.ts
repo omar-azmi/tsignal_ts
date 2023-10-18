@@ -10,17 +10,12 @@ export {
 	bind_set_clear,
 	bind_set_delete,
 	bind_set_has
-} from "https://deno.land/x/kitchensink_ts@v0.7.1/binder.ts"
-export { array_isArray, noop, object_assign, object_keys, object_values } from "https://deno.land/x/kitchensink_ts@v0.7.1/builtin_aliases_deps.ts"
-export { THROTTLE_REJECT, throttle, throttleAndTrail } from "https://deno.land/x/kitchensink_ts@v0.7.1/lambda.ts"
-export { prototypeOfClass } from "https://deno.land/x/kitchensink_ts@v0.7.1/struct.ts"
-export type { CallableFunctionsOf, ConstructorOf, MethodsOf, StaticImplements } from "https://deno.land/x/kitchensink_ts@v0.7.1/typedefs.ts"
+} from "https://deno.land/x/kitchensink_ts@v0.7.2/binder.ts"
+export { array_isArray, noop, object_assign, object_keys, object_values, promise_forever, promise_reject, promise_resolve } from "https://deno.land/x/kitchensink_ts@v0.7.2/builtin_aliases_deps.ts"
+export { THROTTLE_REJECT, throttle, throttleAndTrail } from "https://deno.land/x/kitchensink_ts@v0.7.2/lambda.ts"
+export { prototypeOfClass } from "https://deno.land/x/kitchensink_ts@v0.7.2/struct.ts"
+export type { CallableFunctionsOf, ConstructorOf, MethodsOf, StaticImplements } from "https://deno.land/x/kitchensink_ts@v0.7.2/typedefs.ts"
 
 export const enum DEBUG {
 	LOG = 0,
 }
-
-import { noop } from "https://deno.land/x/kitchensink_ts@v0.7.1/builtin_aliases_deps.ts"
-export const promise_resolve = <T>(value: T) => Promise.resolve(value)
-export const promise_reject = <T>(value: T) => Promise.reject(value)
-export const promise_forever = <T>() => new Promise<T>(noop)

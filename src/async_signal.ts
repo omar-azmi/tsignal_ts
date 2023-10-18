@@ -3,7 +3,7 @@
 */
 
 import { Context } from "./context.ts"
-import { noop, promise_forever, promise_reject, promise_resolve } from "./deps.ts"
+import { promise_forever, promise_reject, promise_resolve } from "./deps.ts"
 import { SimpleSignalConfig, SimpleSignal_Factory } from "./signal.ts"
 import { Accessor, AsyncSetter, ID, SignalUpdateStatus, Updater } from "./typedefs.ts"
 
