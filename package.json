@@ -1,7 +1,7 @@
 {
   "module": "./esm/mod.js",
   "name": "tsignal_ts",
-  "version": "0.1.1",
+  "version": "0.1.2-c",
   "description": "a topological order respecting signals library inspired by SolidJS",
   "author": "Omar Azmi",
   "license": "Lulz plz don't steal yet",
@@ -16,6 +16,7 @@
     "@types/node": "^18.11.9",
     "typescript": "^5.0.0",
     "typedoc": "^0.24.8",
+    "typedoc-plugin-missing-exports": "^2.1.0",
     "esbuild": "^0.17.19"
   },
   "scripts": {
@@ -36,8 +37,11 @@
     "./signal": {
       "import": "./esm/signal.js"
     },
-    "./mapped_signal": {
-      "import": "./esm/mapped_signal.js"
+    "./record_signal": {
+      "import": "./esm/record_signal.js"
+    },
+    "./async_signal": {
+      "import": "./esm/async_signal.js"
     },
     "./funcdefs": {
       "import": "./esm/funcdefs.js"
@@ -45,5 +49,8 @@
     "./typedefs": {
       "import": "./esm/typedefs.js"
     }
+  },
+  "dependencies": {
+    "kitchensink_ts": "^v0.7.2"
   }
 }

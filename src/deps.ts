@@ -10,12 +10,11 @@ export {
 	bind_set_clear,
 	bind_set_delete,
 	bind_set_has
-} from "./deps/deno.land/x/kitchensink_ts@v0.7.0/binder.js"
-export { THROTTLE_REJECT, throttle } from "./deps/deno.land/x/kitchensink_ts@v0.7.0/browser.js"
-export { array_isArray, noop, object_assign, object_keys, object_values } from "./deps/deno.land/x/kitchensink_ts@v0.7.0/builtin_aliases_deps.js"
-export { prototypeOfClass } from "./deps/deno.land/x/kitchensink_ts@v0.7.0/struct.js"
-export type { CallableFunctionsOf, ConstructorOf, MethodsOf, StaticImplements } from "./deps/deno.land/x/kitchensink_ts@v0.7.0/typedefs.js"
-
+} from "kitchensink_ts/binder"
+export { array_isArray, noop, object_assign, object_keys, object_values, promise_forever, promise_reject, promise_resolve } from "kitchensink_ts/builtin_aliases_deps"
+export { THROTTLE_REJECT, throttle, throttleAndTrail } from "kitchensink_ts/lambda"
+export { prototypeOfClass } from "kitchensink_ts/struct"
+export type { CallableFunctionsOf, ConstructorOf, MethodsOf, StaticImplements } from "kitchensink_ts/typedefs"
 
 export const enum DEBUG {
 	LOG = 0,

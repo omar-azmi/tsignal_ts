@@ -123,14 +123,14 @@ export class Context {
         };
         const propagateSignalUpdate = (id, force) => {
             if (to_visit_this_cycle_delete(id)) {
-                const this_signal = all_signals_get(id);
+                const forced = force === true, this_signal = all_signals_get(id);
                 if (DEBUG.LOG) {
                     console.log("UPDATE_CYCLE\t", "visiting   :\t", this_signal?.name);
                 }
                 // first make sure that all of this signal's dependencies are up to date (should they be among the set of ids to visit this update cycle)
                 // `any_updated_dependency` is always initially `false`. however, if the signal id was `force`d, then it would be `true`, and skip dependency checking and updating.
                 // you must use `force === true` for `StateSignal`s (because they are dependency free), or for a independently fired `EffectSignal`
-                let any_updated_dependency = force === true ? SignalUpdateStatus.UPDATED : SignalUpdateStatus.UNCHANGED;
+                let any_updated_dependency = forced ? SignalUpdateStatus.UPDATED : SignalUpdateStatus.UNCHANGED;
                 if (any_updated_dependency <= SignalUpdateStatus.UNCHANGED) {
                     for (const dependency_id of rmap_get(id) ?? []) {
                         propagateSignalUpdate(dependency_id);
@@ -143,22 +143,23 @@ export class Context {
                 // if both criterias are met, then this signal should propagate forward towards its observers
                 let this_signal_update_status = any_updated_dependency;
                 if (this_signal_update_status >= SignalUpdateStatus.UPDATED) {
-                    this_signal_update_status = this_signal?.run() ?? SignalUpdateStatus.UNCHANGED;
-                    if (this_signal_update_status >= SignalUpdateStatus.UPDATED) {
-                        if (this_signal.postrun) {
-                            postruns_this_cycle_push(id);
-                        }
+                    this_signal_update_status = this_signal?.run(forced) ?? SignalUpdateStatus.UNCHANGED;
+                    /* I think we should ignore batching aborted source-signals here. instead, we should let the source itself handle how it wishes to be batched, or when it wishes to run
+                    if (this_signal_update_status <= SignalUpdateStatus.ABORTED) {
+                        // we only batch source ids which result in an ABORTED signal, rather than the collateral resulting ABORTED signals as a consequence
+                        batched_ids_push(id)
                     }
+                    */
                 }
                 updated_this_cycle_set(id, this_signal_update_status);
                 if (DEBUG.LOG) {
                     console.log("UPDATE_CYCLE\t", this_signal_update_status > 0 ? "propagating:\t" : this_signal_update_status < 0 ? "delaying    \t" : "blocking   :\t", this_signal?.name);
                 }
                 if (this_signal_update_status >= SignalUpdateStatus.UPDATED) {
+                    if (this_signal.postrun) {
+                        postruns_this_cycle_push(id);
+                    }
                     fmap_get(id)?.forEach(propagateSignalUpdate);
-                }
-                else if (this_signal_update_status <= SignalUpdateStatus.ABORTED) {
-                    batched_ids_push(id);
                 }
             }
         };
@@ -172,7 +173,7 @@ export class Context {
                 }
             }
         };
-        // @ts-ignore:
+        // @ts-ignore: TODO implement signal deletion
         this.delEdge = undefined;
         this.newId = () => {
             // clear the `ids_to_visit_cache`, because the old cache won't include this new signal in any of this signal's dependency pathways.
@@ -182,7 +183,7 @@ export class Context {
         };
         this.getId = all_signals_get;
         this.setId = all_signals_set;
-        // @ts-ignore:
+        // @ts-ignore: TODO implement signal deletion
         this.delId = undefined;
         this.runId = (id) => {
             const will_fire_immediately = batch_nestedness <= 0;

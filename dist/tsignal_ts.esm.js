@@ -1,35 +1,38 @@
-// src/deps/deno.land/x/kitchensink_ts@v0.7.0/builtin_aliases_deps.ts
-var {
-  from: array_from,
-  isArray: array_isArray,
-  of: array_of
-} = Array;
-var string_fromCharCode = String.fromCharCode;
-var promise_resolve = Promise.resolve;
-var {
-  isInteger: number_isInteger,
-  MAX_VALUE: number_MAX_VALUE,
-  NEGATIVE_INFINITY: number_NEGATIVE_INFINITY,
-  POSITIVE_INFINITY: number_POSITIVE_INFINITY
-} = Number;
-var {
-  assign: object_assign,
-  keys: object_keys,
-  getPrototypeOf: object_getPrototypeOf,
-  values: object_values
-} = Object;
-var date_now = Date.now;
-var {
-  iterator: symbol_iterator,
-  toStringTag: symbol_toStringTag
-} = Symbol;
+// node_modules/kitchensink_ts/esm/_dnt.polyfills.js
+if (!Object.hasOwn) {
+  Object.defineProperty(Object, "hasOwn", {
+    value: function(object, property) {
+      if (object == null) {
+        throw new TypeError("Cannot convert undefined or null to object");
+      }
+      return Object.prototype.hasOwnProperty.call(Object(object), property);
+    },
+    configurable: true,
+    enumerable: false,
+    writable: true
+  });
+}
+
+// node_modules/kitchensink_ts/esm/builtin_aliases_deps.js
 var noop = () => {
 };
+var string_fromCharCode = String.fromCharCode;
+var promise_resolve = /* @__PURE__ */ Promise.resolve.bind(Promise);
+var promise_reject = /* @__PURE__ */ Promise.reject.bind(Promise);
+var promise_forever = () => new Promise(noop);
+var { from: array_from, isArray: array_isArray, of: array_of } = Array;
+var { isInteger: number_isInteger, MAX_VALUE: number_MAX_VALUE, NEGATIVE_INFINITY: number_NEGATIVE_INFINITY, POSITIVE_INFINITY: number_POSITIVE_INFINITY } = Number;
+var { assign: object_assign, defineProperty: object_defineProperty, keys: object_keys, getPrototypeOf: object_getPrototypeOf, values: object_values } = Object;
+var date_now = Date.now;
+var { iterator: symbol_iterator, toStringTag: symbol_toStringTag } = Symbol;
 
-// src/deps/deno.land/x/kitchensink_ts@v0.7.0/struct.ts
+// node_modules/kitchensink_ts/esm/struct.js
 var prototypeOfClass = (cls) => cls.prototype;
+var monkeyPatchPrototypeOfClass = (cls, key, value) => {
+  object_defineProperty(prototypeOfClass(cls), key, { value });
+};
 
-// src/deps/deno.land/x/kitchensink_ts@v0.7.0/binder.ts
+// node_modules/kitchensink_ts/esm/binder.js
 var bindMethodFactoryByName = (instance, method_name, ...args) => {
   return (thisArg) => {
     return instance[method_name].bind(thisArg, ...args);
@@ -50,8 +53,178 @@ var bind_map_clear = /* @__PURE__ */ bindMethodFactoryByName(map_proto, "clear")
 var bind_map_get = /* @__PURE__ */ bindMethodFactoryByName(map_proto, "get");
 var bind_map_set = /* @__PURE__ */ bindMethodFactoryByName(map_proto, "set");
 
-// src/deps/deno.land/x/kitchensink_ts@v0.7.0/browser.ts
-var THROTTLE_REJECT = Symbol("a rejection by a throttled function");
+// node_modules/kitchensink_ts/esm/numericmethods.js
+var modulo = (value, mod) => (value % mod + mod) % mod;
+
+// node_modules/kitchensink_ts/esm/collections.js
+var _a;
+var Deque = class {
+  /** a double-ended circular queue, similar to python's `collection.deque` <br>
+   * @param length maximum length of the queue. <br>
+   * pushing more items than the length will remove the items from the opposite side, so as to maintain the size
+  */
+  constructor(length) {
+    Object.defineProperty(this, "length", {
+      enumerable: true,
+      configurable: true,
+      writable: true,
+      value: length
+    });
+    Object.defineProperty(this, "items", {
+      enumerable: true,
+      configurable: true,
+      writable: true,
+      value: void 0
+    });
+    Object.defineProperty(this, "front", {
+      enumerable: true,
+      configurable: true,
+      writable: true,
+      value: 0
+    });
+    Object.defineProperty(this, "back", {
+      enumerable: true,
+      configurable: true,
+      writable: true,
+      value: void 0
+    });
+    Object.defineProperty(this, "count", {
+      enumerable: true,
+      configurable: true,
+      writable: true,
+      value: 0
+    });
+    this.items = Array(length);
+    this.back = length - 1;
+  }
+  /** inserts one or more items to the back of the deque. <br>
+   * if the deque is full, it will remove the front item before adding a new item
+  */
+  pushBack(...items) {
+    for (const item of items) {
+      if (this.count === this.length)
+        this.popFront();
+      this.items[this.back] = item;
+      this.back = modulo(this.back - 1, this.length);
+      this.count++;
+    }
+  }
+  /** inserts one or more items to the front of the deque. <br>
+   * if the deque is full, it will remove the rear item before adding a new item
+  */
+  pushFront(...items) {
+    for (const item of items) {
+      if (this.count === this.length)
+        this.popBack();
+      this.items[this.front] = item;
+      this.front = modulo(this.front + 1, this.length);
+      this.count++;
+    }
+  }
+  /** get the item at the back of the deque without removing/popping it */
+  getBack() {
+    if (this.count === 0)
+      return void 0;
+    return this.items[modulo(this.back + 1, this.length)];
+  }
+  /** get the item at the front of the deque without removing/popping it */
+  getFront() {
+    if (this.count === 0)
+      return void 0;
+    return this.items[modulo(this.front - 1, this.length)];
+  }
+  /** removes/pops the item at the back of the deque and returns it */
+  popBack() {
+    if (this.count === 0)
+      return void 0;
+    this.back = modulo(this.back + 1, this.length);
+    const item = this.items[this.back];
+    this.items[this.back] = void 0;
+    this.count--;
+    return item;
+  }
+  /** removes/pops the item at the front of the deque and returns it */
+  popFront() {
+    if (this.count === 0)
+      return void 0;
+    this.front = modulo(this.front - 1, this.length);
+    const item = this.items[this.front];
+    this.items[this.front] = void 0;
+    this.count--;
+    return item;
+  }
+  /** rotates the deque `steps` number of positions to the right. <br>
+   * if `steps` is negative, then it will rotate in the left direction. <br>
+   * when the deque is not empty, rotating with `step = 1` is equivalent to `this.pushBack(this.popFront())`
+  */
+  rotate(steps) {
+    const { front, back, length, count, items } = this;
+    if (count === 0)
+      return;
+    steps = modulo(steps, count);
+    if (count < length) {
+      for (let i = 0; i < steps; i++) {
+        const b = modulo(back - i, length), f = modulo(front - i - 1, length);
+        items[b] = items[f];
+        items[f] = void 0;
+      }
+    }
+    this.front = modulo(front - steps, length);
+    this.back = modulo(back - steps, length);
+  }
+  /** reverses the order of the items in the deque. */
+  reverse() {
+    const center = this.count / 2 | 0, { length, front, back, items } = this;
+    for (let i = 1; i <= center; i++) {
+      const b = modulo(back + i, length), f = modulo(front - i, length), temp = items[b];
+      items[b] = items[f];
+      items[f] = temp;
+    }
+  }
+  /** provide an index with relative to `this.back + 1`, and get the appropriate resolved index `i` that can be used to retrieve `this.items[i]`. <br>
+   * example: `this.items[this.resolveIndex(0)] === "rear most element of the deque"`
+   * example: `this.items[this.resolveIndex(5)] === "fifth element ahead of the rear of the deque"`
+  */
+  resolveIndex(index) {
+    return modulo(this.back + index + 1, this.length);
+  }
+  /** returns the item at the specified index.
+   * @param index The index of the item to retrieve, relative to the rear-most element
+   * @returns The item at the specified index, or `undefined` if the index is out of range
+  */
+  at(index) {
+    return this.items[this.resolveIndex(index)];
+  }
+  /** replaces the item at the specified index with a new item. */
+  replace(index, item) {
+    this.items[modulo(this.back + index + 1, this.count)] = item;
+  }
+  /** inserts an item at the specified index, shifting all items ahead of it one position to the front. <br>
+   * if the deque is full, it removes the front item before adding the new item.
+  */
+  insert(index, item) {
+    if (this.count === this.length)
+      this.popFront();
+    const i = this.resolveIndex(index);
+    for (let j = this.front; j > i; j--)
+      this.items[j] = this.items[j - 1];
+    this.items[i] = item;
+    this.count++;
+  }
+};
+_a = Deque;
+(() => {
+  /* @__PURE__ */ monkeyPatchPrototypeOfClass(_a, symbol_iterator, function() {
+    const count = this.count;
+    let i = 0;
+    return {
+      next: () => i < count ? { value: this.at(i++), done: false } : { value: void 0, done: true }
+    };
+  });
+})();
+
+// node_modules/kitchensink_ts/esm/lambda.js
+var THROTTLE_REJECT = /* @__PURE__ */ Symbol("a rejection by a throttled function");
 var throttle = (delta_time_ms, fn) => {
   let last_call = 0;
   return (...args) => {
@@ -90,6 +263,222 @@ var log_get_request = 0 /* LOG */ ? (all_signals_get, observed_id, observer_id) 
     observed_signal.value
   );
 } : noop;
+
+// src/signal.ts
+var SimpleSignal_Factory = (ctx) => {
+  const { newId, getId, setId, addEdge } = ctx;
+  return class SimpleSignal {
+    constructor(value, {
+      name,
+      equals
+    } = {}) {
+      const id = newId();
+      setId(id, this);
+      this.id = id;
+      this.rid = id;
+      this.name = name;
+      this.value = value;
+      this.equals = equals === false ? falsey_equality : equals ?? default_equality;
+    }
+    get(observer_id) {
+      if (observer_id) {
+        addEdge(this.id, observer_id);
+      }
+      if (0 /* LOG */) {
+        log_get_request(getId, this.id, observer_id);
+      }
+      return this.value;
+    }
+    set(new_value) {
+      const old_value = this.value;
+      return !this.equals(old_value, this.value = typeof new_value === "function" ? new_value(old_value) : new_value);
+    }
+    run(forced) {
+      return forced ? 1 /* UPDATED */ : 0 /* UNCHANGED */;
+    }
+    bindMethod(method_name) {
+      return bindMethodToSelfByName(this, method_name);
+    }
+    static create(...args) {
+      const new_signal = new this(...args);
+      return [new_signal.id, new_signal];
+    }
+  };
+};
+var StateSignal_Factory = (ctx) => {
+  const runId = ctx.runId;
+  return class StateSignal extends ctx.getClass(SimpleSignal_Factory) {
+    constructor(value, config) {
+      super(value, config);
+    }
+    set(new_value) {
+      const value_has_changed = super.set(new_value);
+      if (value_has_changed) {
+        runId(this.id);
+        return true;
+      }
+      return false;
+    }
+    static create(value, config) {
+      const new_signal = new this(value, config);
+      return [
+        new_signal.id,
+        new_signal.bindMethod("get"),
+        new_signal.bindMethod("set")
+      ];
+    }
+  };
+};
+var MemoSignal_Factory = (ctx) => {
+  return class MemoSignal extends ctx.getClass(SimpleSignal_Factory) {
+    constructor(fn, config) {
+      super(config?.value, config);
+      this.fn = fn;
+      if (config?.defer === false) {
+        this.get();
+      }
+    }
+    get(observer_id) {
+      if (this.rid) {
+        this.run();
+        this.rid = 0;
+      }
+      return super.get(observer_id);
+    }
+    // TODO: consider whether or not MemoSignals should be able to be forced to fire independently
+    run(forced) {
+      return super.set(this.fn(this.rid)) ? 1 /* UPDATED */ : 0 /* UNCHANGED */;
+    }
+    static create(fn, config) {
+      const new_signal = new this(fn, config);
+      return [
+        new_signal.id,
+        new_signal.bindMethod("get")
+      ];
+    }
+  };
+};
+var LazySignal_Factory = (ctx) => {
+  return class LazySignal extends ctx.getClass(SimpleSignal_Factory) {
+    constructor(fn, config) {
+      super(config?.value, config);
+      this.fn = fn;
+      this.dirty = 1;
+      if (config?.defer === false) {
+        this.get();
+      }
+    }
+    run(forced) {
+      return this.dirty = 1;
+    }
+    get(observer_id) {
+      if (this.rid || this.dirty) {
+        super.set(this.fn(this.rid));
+        this.dirty = 1;
+        this.rid = 0;
+      }
+      return super.get(observer_id);
+    }
+    static create(fn, config) {
+      const new_signal = new this(fn, config);
+      return [
+        new_signal.id,
+        new_signal.bindMethod("get")
+      ];
+    }
+  };
+};
+var EffectSignal_Factory = (ctx) => {
+  const runId = ctx.runId;
+  return class EffectSignal extends ctx.getClass(SimpleSignal_Factory) {
+    constructor(fn, config) {
+      super(void 0, config);
+      this.fn = fn;
+      if (config?.defer === false) {
+        this.set();
+      }
+    }
+    /** a non-untracked observer (which is what all new observers are) depending on an effect signal will result in the triggering of effect function.
+     * this is an intentional design choice so that effects can be scaffolded on top of other effects.
+    */
+    get(observer_id) {
+      if (observer_id) {
+        this.run();
+        super.get(observer_id);
+      }
+    }
+    set() {
+      const effect_will_fire_immediately = runId(this.id);
+      return effect_will_fire_immediately;
+    }
+    run(forced) {
+      const signal_should_propagate = this.fn(this.rid) !== false;
+      if (this.rid) {
+        this.rid = 0;
+      }
+      return signal_should_propagate ? 1 /* UPDATED */ : 0 /* UNCHANGED */;
+    }
+    static create(fn, config) {
+      const new_signal = new this(fn, config);
+      return [
+        new_signal.id,
+        new_signal.bindMethod("get"),
+        new_signal.bindMethod("set")
+      ];
+    }
+  };
+};
+
+// src/async_signal.ts
+var AsyncStateSignal_Factory = (ctx) => {
+  const runId = ctx.runId;
+  return class AsyncStateSignal extends ctx.getClass(SimpleSignal_Factory) {
+    /** previous pending promise */
+    promise;
+    constructor(value, config) {
+      super(value, config);
+    }
+    setPromise(new_value, rejectable = false) {
+      const _this = this, new_value_is_updater = typeof new_value === "function" && !(new_value instanceof Promise);
+      new_value = new_value_is_updater ? new_value(_this.value) : new_value;
+      if (new_value instanceof Promise) {
+        return (_this.promise = new_value).then(
+          // on promise resolved
+          (value) => {
+            if (_this.promise === new_value) {
+              _this.promise = void 0;
+              return _this.setPromise(value, rejectable);
+            }
+            return promise_forever();
+          },
+          // on promise rejected
+          (reason) => {
+            if (_this.promise === new_value) {
+              _this.promise = void 0;
+            }
+            return rejectable ? promise_reject(reason) : promise_forever();
+          }
+        );
+      }
+      const value_has_changed = super.set(new_value);
+      if (value_has_changed) {
+        runId(this.id);
+      }
+      return promise_resolve(new_value);
+    }
+    run(forced) {
+      return this.promise ? -1 /* ABORTED */ : super.run(forced);
+    }
+    static create(value, config) {
+      const new_signal = new this(value, config);
+      return [
+        new_signal.id,
+        new_signal.bindMethod("get"),
+        new_signal.bindMethod("setPromise")
+      ];
+    }
+  };
+};
 
 // src/context.ts
 var Context = class {
@@ -149,11 +538,11 @@ var Context = class {
     };
     const propagateSignalUpdate = (id, force) => {
       if (to_visit_this_cycle_delete(id)) {
-        const this_signal = all_signals_get(id);
+        const forced = force === true, this_signal = all_signals_get(id);
         if (0 /* LOG */) {
           console.log("UPDATE_CYCLE	", "visiting   :	", this_signal?.name);
         }
-        let any_updated_dependency = force === true ? 1 /* UPDATED */ : 0 /* UNCHANGED */;
+        let any_updated_dependency = forced ? 1 /* UPDATED */ : 0 /* UNCHANGED */;
         if (any_updated_dependency <= 0 /* UNCHANGED */) {
           for (const dependency_id of rmap_get(id) ?? []) {
             propagateSignalUpdate(dependency_id);
@@ -162,21 +551,17 @@ var Context = class {
         }
         let this_signal_update_status = any_updated_dependency;
         if (this_signal_update_status >= 1 /* UPDATED */) {
-          this_signal_update_status = this_signal?.run() ?? 0 /* UNCHANGED */;
-          if (this_signal_update_status >= 1 /* UPDATED */) {
-            if (this_signal.postrun) {
-              postruns_this_cycle_push(id);
-            }
-          }
+          this_signal_update_status = this_signal?.run(forced) ?? 0 /* UNCHANGED */;
         }
         updated_this_cycle_set(id, this_signal_update_status);
         if (0 /* LOG */) {
           console.log("UPDATE_CYCLE	", this_signal_update_status > 0 ? "propagating:	" : this_signal_update_status < 0 ? "delaying    	" : "blocking   :	", this_signal?.name);
         }
         if (this_signal_update_status >= 1 /* UPDATED */) {
+          if (this_signal.postrun) {
+            postruns_this_cycle_push(id);
+          }
           fmap_get(id)?.forEach(propagateSignalUpdate);
-        } else if (this_signal_update_status <= -1 /* ABORTED */) {
-          batched_ids_push(id);
         }
       }
     };
@@ -244,171 +629,7 @@ var Context = class {
   }
 };
 
-// src/signal.ts
-var SimpleSignal_Factory = (ctx) => {
-  const { newId, getId, setId, addEdge } = ctx;
-  return class SimpleSignal {
-    constructor(value, {
-      name,
-      equals
-    } = {}) {
-      const id = newId();
-      setId(id, this);
-      this.id = id;
-      this.rid = id;
-      this.name = name;
-      this.value = value;
-      this.equals = equals === false ? falsey_equality : equals ?? default_equality;
-    }
-    get(observer_id) {
-      if (observer_id) {
-        addEdge(this.id, observer_id);
-      }
-      if (0 /* LOG */) {
-        log_get_request(getId, this.id, observer_id);
-      }
-      return this.value;
-    }
-    set(new_value) {
-      const old_value = this.value;
-      return !this.equals(old_value, this.value = typeof new_value === "function" ? new_value(old_value) : new_value);
-    }
-    run() {
-      return 1 /* UPDATED */;
-    }
-    bindMethod(method_name) {
-      return bindMethodToSelfByName(this, method_name);
-    }
-    static create(...args) {
-      const new_signal = new this(...args);
-      return [new_signal.id, new_signal];
-    }
-  };
-};
-var StateSignal_Factory = (ctx) => {
-  const runId = ctx.runId;
-  return class StateSignal extends ctx.getClass(SimpleSignal_Factory) {
-    constructor(value, config) {
-      super(value, config);
-    }
-    set(new_value) {
-      const value_has_changed = super.set(new_value);
-      if (value_has_changed) {
-        runId(this.id);
-        return true;
-      }
-      return false;
-    }
-    static create(value, config) {
-      const new_signal = new this(value, config);
-      return [
-        new_signal.id,
-        new_signal.bindMethod("get"),
-        new_signal.bindMethod("set")
-      ];
-    }
-  };
-};
-var MemoSignal_Factory = (ctx) => {
-  return class MemoSignal extends ctx.getClass(SimpleSignal_Factory) {
-    constructor(fn, config) {
-      super(config?.value, config);
-      this.fn = fn;
-      if (config?.defer === false) {
-        this.get();
-      }
-    }
-    get(observer_id) {
-      if (this.rid) {
-        this.run();
-        this.rid = 0;
-      }
-      return super.get(observer_id);
-    }
-    run() {
-      return super.set(this.fn(this.rid)) ? 1 /* UPDATED */ : 0 /* UNCHANGED */;
-    }
-    static create(fn, config) {
-      const new_signal = new this(fn, config);
-      return [
-        new_signal.id,
-        new_signal.bindMethod("get")
-      ];
-    }
-  };
-};
-var LazySignal_Factory = (ctx) => {
-  return class LazySignal extends ctx.getClass(SimpleSignal_Factory) {
-    constructor(fn, config) {
-      super(config?.value, config);
-      this.fn = fn;
-      this.dirty = 1;
-      if (config?.defer === false) {
-        this.get();
-      }
-    }
-    run() {
-      return this.dirty = 1;
-    }
-    get(observer_id) {
-      if (this.rid || this.dirty) {
-        super.set(this.fn(this.rid));
-        this.dirty = 1;
-        this.rid = 0;
-      }
-      return super.get(observer_id);
-    }
-    static create(fn, config) {
-      const new_signal = new this(fn, config);
-      return [
-        new_signal.id,
-        new_signal.bindMethod("get")
-      ];
-    }
-  };
-};
-var EffectSignal_Factory = (ctx) => {
-  const runId = ctx.runId;
-  return class EffectSignal extends ctx.getClass(SimpleSignal_Factory) {
-    constructor(fn, config) {
-      super(void 0, config);
-      this.fn = fn;
-      if (config?.defer === false) {
-        this.set();
-      }
-    }
-    /** a non-untracked observer (which is what all new observers are) depending on an effect signal will result in the triggering of effect function.
-     * this is an intentional design choice so that effects can be scaffolded on top of other effects.
-    */
-    get(observer_id) {
-      if (observer_id) {
-        this.run();
-        super.get(observer_id);
-      }
-    }
-    set() {
-      const effect_will_fire_immediately = runId(this.id);
-      return effect_will_fire_immediately;
-    }
-    run() {
-      const signal_should_propagate = this.fn(this.rid) !== false;
-      if (this.rid) {
-        this.rid = 0;
-      }
-      return signal_should_propagate ? 1 /* UPDATED */ : 0 /* UNCHANGED */;
-    }
-    static create(fn, config) {
-      const new_signal = new this(fn, config);
-      return [
-        new_signal.id,
-        new_signal.bindMethod("get"),
-        new_signal.bindMethod("set")
-      ];
-    }
-  };
-};
-
-// src/mapped_signal.ts
+// src/record_signal.ts
 var RecordSignal_Factory = (ctx) => {
   return class RecordSignal extends ctx.getClass(SimpleSignal_Factory) {
     constructor(base_record = {}, config) {
@@ -417,7 +638,7 @@ var RecordSignal_Factory = (ctx) => {
       this.setItems(keys, values, false);
     }
     /*
-    run(): SignalUpdateStatus {
+    run(forced?: boolean): SignalUpdateStatus {
     	const
     		delta_record = this.value,
     		record_has_changed = delta_record.length > 1
@@ -502,7 +723,7 @@ var RecordMemoSignal_Factory = (ctx) => {
       }
       return super.get(observer_id);
     }
-    run() {
+    run(forced) {
       const [set_keys, set_values, propagate = true] = this.fn(this.rid);
       return propagate && super.setItems(set_keys, set_values) ? 1 /* UPDATED */ : 0 /* UNCHANGED */;
     }
@@ -516,6 +737,7 @@ var RecordMemoSignal_Factory = (ctx) => {
   };
 };
 export {
+  AsyncStateSignal_Factory,
   Context,
   EffectSignal_Factory,
   LazySignal_Factory,

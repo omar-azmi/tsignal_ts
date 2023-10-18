@@ -1,4 +1,4 @@
-/** mapped signals <br>
+/** record signals <br>
  * @module
 */
 import { Context } from "./context.js";
@@ -41,7 +41,7 @@ export declare const RecordSignal_Factory: (ctx: Context) => {
         fn?: ((observer_id: number) => any) | undefined;
         prerun?(): any;
         get(observer_id?: number | undefined): [record: Record<K, V>, ...changed_keys: K[]];
-        run(): SignalUpdateStatus;
+        run(forced?: boolean | undefined): SignalUpdateStatus;
         bindMethod<M extends keyof any>(method_name: M): any[M];
     };
     create<T>(...args: any[]): [number, ...any[]];
@@ -61,7 +61,7 @@ export declare const RecordStateSignal_Factory: (ctx: Context) => {
         name?: string | undefined;
         prerun?(): any;
         get(observer_id?: number | undefined): [record: Record<K, V>, ...changed_keys: K[]];
-        run(): SignalUpdateStatus;
+        run(forced?: boolean | undefined): SignalUpdateStatus;
         bindMethod<M extends keyof any>(method_name: M): any[M];
     };
     create<K_1 extends PropertyKey, V_1>(base_record?: Record<K_1, V_1>, config?: RecordSignalConfig<K_1, V_1> | undefined): [idRecord: number, getDeltaRecord: Accessor<[record: Record<K_1, V_1>, ...changed_keys: K_1[]]>, setRecord: (key: K_1, new_value: V_1 | Updater<V_1>, ignore?: boolean) => boolean, setRecords: (keys: K_1[], values: (V_1 | Updater<V_1>)[], ignore?: boolean) => boolean, deleteRecord: (key: K_1, ignore?: boolean) => boolean, deleteRecords: (keys: K_1[], ignore?: boolean) => boolean];
@@ -73,7 +73,7 @@ export declare const RecordMemoSignal_Factory: (ctx: Context) => {
         value: [record: Record<K, V>, ...changed_keys: K[]];
         fn: RecordMemoFn<K, V>;
         get(observer_id?: TO_ID | UNTRACKED_ID): [record: Record<K, V>, ...changed_keys: K[]];
-        run(): SignalUpdateStatus;
+        run(forced?: boolean): SignalUpdateStatus;
         equals: EqualityFn<V>;
         postrun(): void;
         set(key: K, new_value: V | Updater<V>, ignore?: boolean): boolean;

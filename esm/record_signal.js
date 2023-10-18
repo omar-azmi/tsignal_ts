@@ -1,4 +1,4 @@
-/** mapped signals <br>
+/** record signals <br>
  * @module
 */
 import { array_isArray, object_keys, object_values } from "./deps.js";
@@ -13,7 +13,7 @@ export const RecordSignal_Factory = (ctx) => {
             this.setItems(keys, values, false);
         }
         /*
-        run(): SignalUpdateStatus {
+        run(forced?: boolean): SignalUpdateStatus {
             const
                 delta_record = this.value,
                 record_has_changed = delta_record.length > 1
@@ -100,7 +100,7 @@ export const RecordMemoSignal_Factory = (ctx) => {
             }
             return super.get(observer_id);
         }
-        run() {
+        run(forced) {
             const [set_keys, set_values, propagate = true] = this.fn(this.rid);
             return propagate && super.setItems(set_keys, set_values) ?
                 SignalUpdateStatus.UPDATED :

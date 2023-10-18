@@ -1,4 +1,4 @@
-/** mapped signals <br>
+/** record signals <br>
  * @module
 */
 
@@ -61,7 +61,7 @@ export const RecordSignal_Factory = (ctx: Context) => {
 		}
 
 		/*
-		run(): SignalUpdateStatus {
+		run(forced?: boolean): SignalUpdateStatus {
 			const
 				delta_record = this.value,
 				record_has_changed = delta_record.length > 1
@@ -189,7 +189,7 @@ export const RecordMemoSignal_Factory = (ctx: Context) => {
 			return super.get(observer_id)
 		}
 
-		run(): SignalUpdateStatus {
+		run(forced?: boolean): SignalUpdateStatus {
 			const [set_keys, set_values, propagate = true] = this.fn(this.rid)
 			return propagate && super.setItems(set_keys, set_values) ?
 				SignalUpdateStatus.UPDATED :

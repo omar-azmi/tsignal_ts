@@ -33,8 +33,10 @@ export const SimpleSignal_Factory = (ctx) => {
                 new_value(old_value) :
                 new_value));
         }
-        run() {
-            return SignalUpdateStatus.UPDATED;
+        run(forced) {
+            return forced ?
+                SignalUpdateStatus.UPDATED :
+                SignalUpdateStatus.UNCHANGED;
         }
         bindMethod(method_name) {
             return bindMethodToSelfByName(this, method_name);
@@ -52,7 +54,7 @@ export const StateSignal_Factory = (ctx) => {
             super(value, config);
         }
         set(new_value) {
-            // if value has changed, then fire this id to begin or queue a firing cycle
+            // if value has changed, then fire this id to begin/queue a firing cycle
             const value_has_changed = super.set(new_value);
             if (value_has_changed) {
                 runId(this.id);
@@ -86,7 +88,8 @@ export const MemoSignal_Factory = (ctx) => {
             }
             return super.get(observer_id);
         }
-        run() {
+        // TODO: consider whether or not MemoSignals should be able to be forced to fire independently
+        run(forced) {
             return super.set(this.fn(this.rid)) ?
                 SignalUpdateStatus.UPDATED :
                 SignalUpdateStatus.UNCHANGED;
@@ -110,7 +113,7 @@ export const LazySignal_Factory = (ctx) => {
                 this.get();
             }
         }
-        run() {
+        run(forced) {
             return (this.dirty = 1);
         }
         get(observer_id) {
@@ -153,7 +156,7 @@ export const EffectSignal_Factory = (ctx) => {
             const effect_will_fire_immediately = runId(this.id);
             return effect_will_fire_immediately;
         }
-        run() {
+        run(forced) {
             const signal_should_propagate = this.fn(this.rid) !== false;
             if (this.rid) {
                 this.rid = 0;

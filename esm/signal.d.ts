@@ -39,7 +39,7 @@ export declare const SimpleSignal_Factory: (ctx: Context) => {
         postrun?(): any;
         get(observer_id?: TO_ID | UNTRACKED_ID): T;
         set(new_value: T | Updater<T>): boolean;
-        run(): SignalUpdateStatus;
+        run(forced?: boolean): SignalUpdateStatus;
         bindMethod<M extends keyof any>(method_name: M): any[M];
     };
     create<T_1>(...args: any[]): [id: ID, ...any[]];
@@ -56,7 +56,7 @@ export declare const StateSignal_Factory: (ctx: Context) => {
         name?: string | undefined;
         equals: EqualityFn<T>;
         get(observer_id?: TO_ID | UNTRACKED_ID): T;
-        run(): SignalUpdateStatus;
+        run(forced?: boolean): SignalUpdateStatus;
         bindMethod<M extends keyof any>(method_name: M): any[M];
     };
     create<T_1>(value: T_1, config?: SimpleSignalConfig<T_1> | undefined): [idState: number, getState: Accessor<T_1>, setState: Setter<T_1>];
@@ -69,7 +69,7 @@ export declare const MemoSignal_Factory: (ctx: Context) => {
         prerun: never;
         postrun: never;
         get(observer_id?: TO_ID | UNTRACKED_ID): T;
-        run(): SignalUpdateStatus;
+        run(forced?: boolean): SignalUpdateStatus;
         id: ID;
         rid: ID | UNTRACKED_ID;
         name?: string | undefined;
@@ -86,7 +86,7 @@ export declare const LazySignal_Factory: (ctx: Context) => {
         dirty: 0 | 1;
         prerun: never;
         postrun: never;
-        run(): SignalUpdateStatus.UPDATED;
+        run(forced?: boolean): SignalUpdateStatus.UPDATED;
         get(observer_id?: TO_ID | UNTRACKED_ID): T;
         id: ID;
         rid: ID | UNTRACKED_ID;
@@ -119,7 +119,7 @@ export declare const EffectSignal_Factory: (ctx: Context) => {
         */
         get(observer_id?: TO_ID | UNTRACKED_ID): void;
         set(): boolean;
-        run(): SignalUpdateStatus;
+        run(forced?: boolean): SignalUpdateStatus;
         id: ID;
         rid: ID | UNTRACKED_ID;
         name?: string | undefined;

@@ -1,7 +1,7 @@
 /** utility functions
  * @module
 */
-import { EqualityCheck, FROM_ID, HASHED_IDS, ID, Signal, TO_ID, UNTRACKED_ID } from "./typedefs.js";
+import { EqualityCheck, HASHED_IDS, ID } from "./typedefs.js";
 export declare const default_equality: <T>(v1: T, v2: T) => boolean;
 export declare const falsey_equality: <T>(v1: T, v2: T) => false;
 /** transforms a regular equality check function ({@link SimpleSignalConfig.equals}) into a one that throttles when called too frequently. <br>
@@ -30,4 +30,4 @@ export declare const falsey_equality: <T>(v1: T, v2: T) => false;
 */
 export declare const throttlingEquals: <T>(delta_time_ms: number, base_equals?: EqualityCheck<T>) => EqualityCheck<T>;
 export declare const hash_ids: (ids: ID[]) => HASHED_IDS;
-export declare const log_get_request: (all_signals_get: (id: ID) => Signal<any> | undefined, observed_id: FROM_ID, observer_id?: TO_ID | UNTRACKED_ID) => void;
+export declare const log_get_request: any;
