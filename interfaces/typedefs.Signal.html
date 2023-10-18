@@ -1,4 +1,4 @@
-<!DOCTYPE html><html class="default" lang="en"><head><meta charSet="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>Signal | tsignal_ts - v0.1.1</title><meta name="description" content="Documentation for tsignal_ts"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/search.js" id="tsd-search-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os"</script><header class="tsd-page-toolbar">
+<!DOCTYPE html><html class="default" lang="en"><head><meta charSet="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>Signal | tsignal_ts - v0.1.2-c</title><meta name="description" content="Documentation for tsignal_ts"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><link rel="stylesheet" href="../assets/custom.css"/><script defer src="../assets/main.js"></script><script async src="../assets/search.js" id="tsd-search-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os"</script><header class="tsd-page-toolbar">
 <div class="tsd-toolbar-contents container">
 <div class="table-cell" id="tsd-search" data-base="..">
 <div class="field"><label for="tsd-search-field" class="tsd-widget tsd-toolbar-icon search no-caption"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M15.7824 13.833L12.6666 10.7177C12.5259 10.5771 12.3353 10.499 12.1353 10.499H11.6259C12.4884 9.39596 13.001 8.00859 13.001 6.49937C13.001 2.90909 10.0914 0 6.50048 0C2.90959 0 0 2.90909 0 6.49937C0 10.0896 2.90959 12.9987 6.50048 12.9987C8.00996 12.9987 9.39756 12.4863 10.5008 11.6239V12.1332C10.5008 12.3332 10.5789 12.5238 10.7195 12.6644L13.8354 15.7797C14.1292 16.0734 14.6042 16.0734 14.8948 15.7797L15.7793 14.8954C16.0731 14.6017 16.0731 14.1267 15.7824 13.833ZM6.50048 10.499C4.29094 10.499 2.50018 8.71165 2.50018 6.49937C2.50018 4.29021 4.28781 2.49976 6.50048 2.49976C8.71001 2.49976 10.5008 4.28708 10.5008 6.49937C10.5008 8.70852 8.71314 10.499 6.50048 10.499Z" fill="var(--color-text)"></path></svg></label><input type="text" id="tsd-search-field" aria-label="Search"/></div>
@@ -6,7 +6,7 @@
 <div id="tsd-toolbar-links"></div></div>
 <ul class="results">
 <li class="state loading">Preparing search index...</li>
-<li class="state failure">The search index is not available</li></ul><a href="../index.html" class="title">tsignal_ts - v0.1.1</a></div>
+<li class="state failure">The search index is not available</li></ul><a href="../index.html" class="title">tsignal_ts - v0.1.2-c</a></div>
 <div class="table-cell" id="tsd-widgets"><a href="#" class="tsd-widget tsd-toolbar-icon menu no-caption" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="2" fill="var(--color-text)"></rect><rect x="1" y="7" width="14" height="2" fill="var(--color-text)"></rect><rect x="1" y="11" width="14" height="2" fill="var(--color-text)"></rect></svg></a></div></div></header>
 <div class="container container-main">
 <div class="col-content">
@@ -15,7 +15,11 @@
 <li><a href="../index.html">tsignal_ts</a></li>
 <li><a href="../modules/typedefs.html">typedefs</a></li>
 <li><a href="typedefs.Signal.html">Signal</a></li></ul>
-<h1>Interface Signal&lt;T&gt;</h1></div> 
+<h1>Interface Signal&lt;T&gt;</h1></div>
+<section class="tsd-panel tsd-comment">
+<div class="tsd-comment tsd-typography"><p>the abstraction that defines what a signal is.</p>
+</div>
+<div class="tsd-comment tsd-typography"></div></section> 
 <section class="tsd-panel">
 <h4>Type Parameters</h4>
 <ul class="tsd-type-parameter-list">
@@ -26,7 +30,7 @@
 <ul class="tsd-hierarchy">
 <li><span class="target">Signal</span></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in typedefs.ts:37</li></ul></aside>
+<li>Defined in src/typedefs.ts:48</li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-index-accordion" open><summary class="tsd-accordion-summary tsd-index-summary">
@@ -51,19 +55,31 @@
 <h2>Properties</h2>
 <section class="tsd-panel tsd-member"><a id="id" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>id</span><a href="#id" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><g stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" id="icon-anchor"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5"></path><path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5"></path></g></svg></a></h3>
-<div class="tsd-signature"><span class="tsd-kind-property">id</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div><aside class="tsd-sources">
+<div class="tsd-signature"><span class="tsd-kind-property">id</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+<div class="tsd-comment tsd-typography"><p>id of this signal in the <a href="../classes/context.Context.html" class="tsd-kind-class">Context</a> in which it exists.</p>
+</div>
+<div class="tsd-comment tsd-typography"></div><aside class="tsd-sources">
 <ul>
-<li>Defined in typedefs.ts:38</li></ul></aside></section>
+<li>Defined in src/typedefs.ts:50</li></ul></aside></section>
 <section class="tsd-panel tsd-member"><a id="rid" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>rid</span><a href="#rid" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
-<div class="tsd-signature"><span class="tsd-kind-property">rid</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div><aside class="tsd-sources">
+<div class="tsd-signature"><span class="tsd-kind-property">rid</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+<div class="tsd-comment tsd-typography"><p>runtime-id of this signal. <br>
+it equals to the <a href="typedefs.Signal.html#id" class="tsd-kind-property">id</a> on the first, so that the dependencies of this signal can be notified of being observed.
+but once all dependencies have been notified after the first run, this runtime-id should become <code>0</code> (<a href="../types/typedefs.UNTRACKED_ID.html" class="tsd-kind-type-alias">UNTRACKED_ID</a>),
+so that the dependiencies do not have to re-register this signal as an observer.</p>
+</div>
+<div class="tsd-comment tsd-typography"></div><aside class="tsd-sources">
 <ul>
-<li>Defined in typedefs.ts:39</li></ul></aside></section>
+<li>Defined in src/typedefs.ts:57</li></ul></aside></section>
 <section class="tsd-panel tsd-member"><a id="name" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <span>name</span><a href="#name" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
-<div class="tsd-signature"><span class="tsd-kind-property">name</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span></div><aside class="tsd-sources">
+<div class="tsd-signature"><span class="tsd-kind-property">name</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span></div>
+<div class="tsd-comment tsd-typography"><p>give a name to this signal for debugging purposes</p>
+</div>
+<div class="tsd-comment tsd-typography"></div><aside class="tsd-sources">
 <ul>
-<li>Defined in typedefs.ts:40</li></ul></aside></section></section>
+<li>Defined in src/typedefs.ts:60</li></ul></aside></section></section>
 <section class="tsd-panel-group tsd-member-group">
 <h2>Methods</h2>
 <section class="tsd-panel tsd-member"><a id="get" class="tsd-anchor"></a>
@@ -71,56 +87,116 @@
 <ul class="tsd-signatures">
 <li class="tsd-signature tsd-anchor-link" id="get.get-1"><span class="tsd-kind-call-signature">get</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">observer_id</span><span class="tsd-signature-symbol">?</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type tsd-kind-type-parameter">T</span><a href="#get.get-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></li>
 <li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>get the value of this signal, and handle any observing signal&#39;s id (observer_id). <br>
+typically, when <code>observer_id</code> is non-zero, this signal should handle it by registering it as an
+observer through the use of the context&#39;s <a href="../classes/context.Context.html#addEdge" class="tsd-kind-property">addEdge</a> method.</p>
+</div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li>
 <h5><code class="tsd-tag ts-flagOptional">Optional</code> <span class="tsd-kind-parameter">observer_id</span>: <span class="tsd-signature-type">number</span></h5></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type tsd-kind-type-parameter">T</span></h4><aside class="tsd-sources">
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type tsd-kind-type-parameter">T</span></h4>
+<div class="tsd-comment tsd-typography">
+<h4>Example</h4><pre><code class="language-ts"><span class="hl-1">const</span><span class="hl-2"> </span><span class="hl-4">MySignalClass_Factory</span><span class="hl-2"> = (</span><span class="hl-6">ctx</span><span class="hl-2">: </span><span class="hl-9">Context</span><span class="hl-2">) </span><span class="hl-1">=&gt;</span><span class="hl-2"> {</span><br/><span class="hl-2">    </span><span class="hl-1">const</span><span class="hl-2"> </span><span class="hl-3">addEdge</span><span class="hl-2"> = </span><span class="hl-6">ctx</span><span class="hl-2">.</span><span class="hl-6">addEdge</span><br/><span class="hl-2">    </span><span class="hl-7">return</span><span class="hl-2"> </span><span class="hl-1">class</span><span class="hl-2"> </span><span class="hl-9">MySignal</span><span class="hl-2">&lt;</span><span class="hl-9">T</span><span class="hl-2">&gt; </span><span class="hl-1">implements</span><span class="hl-2"> </span><span class="hl-9">Signal</span><span class="hl-2">&lt;</span><span class="hl-9">T</span><span class="hl-2">&gt; {</span><br/><span class="hl-2">        </span><span class="hl-1">declare</span><span class="hl-2"> </span><span class="hl-6">value</span><span class="hl-2">: </span><span class="hl-9">T</span><br/><span class="hl-2">        </span><span class="hl-0">// ...</span><br/><span class="hl-2">        </span><span class="hl-4">get</span><span class="hl-2">(</span><span class="hl-6">observer_id</span><span class="hl-2">?: </span><span class="hl-9">TO_ID</span><span class="hl-2"> | </span><span class="hl-9">UNTRACKED_ID</span><span class="hl-2">): </span><span class="hl-9">T</span><span class="hl-2"> {</span><br/><span class="hl-2">            </span><span class="hl-0">// register this.id to observer (if non-zero) in the dependency graph as a directed edge</span><br/><span class="hl-2">            </span><span class="hl-7">if</span><span class="hl-2"> (</span><span class="hl-6">observer_id</span><span class="hl-2">) { </span><span class="hl-4">addEdge</span><span class="hl-2">(</span><span class="hl-1">this</span><span class="hl-2">.</span><span class="hl-6">id</span><span class="hl-2">, </span><span class="hl-6">observer_id</span><span class="hl-2">) }</span><br/><span class="hl-2">            </span><span class="hl-7">return</span><span class="hl-2"> </span><span class="hl-1">this</span><span class="hl-2">.</span><span class="hl-6">value</span><br/><span class="hl-2">        }</span><br/><span class="hl-2">        </span><span class="hl-0">// ...</span><br/><span class="hl-2">    }</span><br/><span class="hl-2">}</span>
+</code><button>Copy</button></pre>
+</div><aside class="tsd-sources">
 <ul>
-<li>Defined in typedefs.ts:41</li></ul></aside></li></ul></section>
+<li>Defined in src/typedefs.ts:83</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member"><a id="set" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>set</span><a href="#set" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
 <li class="tsd-signature tsd-anchor-link" id="set.set-1"><span class="tsd-kind-call-signature">set</span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">...</span><span class="tsd-kind-parameter">args</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span><a href="#set.set-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></li>
 <li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>set the value of this signal. <br>
+the meaning of setting a signal&#39;s value greatly varies from signal to signal, which is why it is so abstracted. <br>
+however, the returning value must always be a <code>boolean</code> describing whether or not this signal&#39;s value has changed compared to its previous value. <br>
+what makes use of the returned value again greatly varies from signal to signal.
+but it is typically used by the <a href="typedefs.Signal.html#run" class="tsd-kind-method">run</a> method to decide whether or not this signal should propagate. <br>
+another purpose of the set method is typically to <em>initiate</em> the ignition of an update cycle in a context, bu using <a href="../classes/context.Context.html#runId" class="tsd-kind-property">runId</a>.
+this is how signal!StateSignals and signal!EffectSignals begin an update cycle when their values have changed from the prior value.</p>
+</div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li>
 <h5><code class="tsd-tag ts-flagRest">Rest</code> <span class="tsd-signature-symbol">...</span><span class="tsd-kind-parameter">args</span>: <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">[]</span></h5></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4><aside class="tsd-sources">
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
+<div class="tsd-comment tsd-typography">
+<h4>Example</h4><pre><code class="language-ts"><span class="hl-1">const</span><span class="hl-2"> </span><span class="hl-4">MySignalClass_Factory</span><span class="hl-2"> = (</span><span class="hl-6">ctx</span><span class="hl-2">: </span><span class="hl-9">Context</span><span class="hl-2">) </span><span class="hl-1">=&gt;</span><span class="hl-2"> {</span><br/><span class="hl-2">    </span><span class="hl-1">const</span><span class="hl-2"> </span><span class="hl-3">runId</span><span class="hl-2"> = </span><span class="hl-6">ctx</span><span class="hl-2">.</span><span class="hl-6">runId</span><br/><span class="hl-2">    </span><span class="hl-7">return</span><span class="hl-2"> </span><span class="hl-1">class</span><span class="hl-2"> </span><span class="hl-9">MySignal</span><span class="hl-2">&lt;</span><span class="hl-9">T</span><span class="hl-2">&gt; </span><span class="hl-1">implements</span><span class="hl-2"> </span><span class="hl-9">Signal</span><span class="hl-2">&lt;</span><span class="hl-9">T</span><span class="hl-2">&gt; {</span><br/><span class="hl-2">        </span><span class="hl-1">declare</span><span class="hl-2"> </span><span class="hl-6">value</span><span class="hl-2">: </span><span class="hl-9">T</span><br/><span class="hl-2">        </span><span class="hl-0">// ...</span><br/><span class="hl-2">        </span><span class="hl-4">set</span><span class="hl-2">(</span><span class="hl-6">new_value</span><span class="hl-2">: </span><span class="hl-9">T</span><span class="hl-2">): </span><span class="hl-9">boolean</span><span class="hl-2"> {</span><br/><span class="hl-2">            </span><span class="hl-1">const</span><span class="hl-2"> </span><span class="hl-3">value_has_changed</span><span class="hl-2"> = </span><span class="hl-6">new_value</span><span class="hl-2"> !== </span><span class="hl-1">this</span><span class="hl-2">.</span><span class="hl-6">value</span><br/><span class="hl-2">            </span><span class="hl-7">if</span><span class="hl-2"> (</span><span class="hl-6">value_has_changed</span><span class="hl-2">) {</span><br/><span class="hl-2">                </span><span class="hl-4">runId</span><span class="hl-2">(</span><span class="hl-1">this</span><span class="hl-2">.</span><span class="hl-6">id</span><span class="hl-2">)</span><br/><span class="hl-2">                </span><span class="hl-7">return</span><span class="hl-2"> </span><span class="hl-1">true</span><br/><span class="hl-2">            }</span><br/><span class="hl-2">            </span><span class="hl-7">return</span><span class="hl-2"> </span><span class="hl-1">false</span><br/><span class="hl-2">        }</span><br/><span class="hl-2">        </span><span class="hl-0">// ...</span><br/><span class="hl-2">    }</span><br/><span class="hl-2">}</span>
+</code><button>Copy</button></pre>
+</div><aside class="tsd-sources">
 <ul>
-<li>Defined in typedefs.ts:42</li></ul></aside></li></ul></section>
+<li>Defined in src/typedefs.ts:113</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member"><a id="prerun" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <span>prerun</span><a href="#prerun" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
 <li class="tsd-signature tsd-anchor-link" id="prerun.prerun-1"><span class="tsd-kind-call-signature">prerun</span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#prerun.prerun-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></li>
 <li class="tsd-description">
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
+<div class="tsd-comment tsd-typography"><p>specify actions that need to be taken <strong>before</strong> an update cycle has even begun propagating. <br>
+TODO: CURRENTLY NOT IMPLEMENTED.
+ISSUE: what should the order in which prepruns run be? we do know the FULL set of signal ids that will be visited.
+  but we do not know the subset of ids that WILL BE affected and ran, not until run time of the signal propagation.
+  should ids that <em>might</em> be affected also have their preruns ran? and in what order? because we cannot know the order until propagation runtime.</p>
+</div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+<div class="tsd-comment tsd-typography"></div><aside class="tsd-sources">
 <ul>
-<li>Defined in typedefs.ts:43</li></ul></aside></li></ul></section>
+<li>Defined in src/typedefs.ts:121</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member"><a id="run" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>run</span><a href="#run" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
-<li class="tsd-signature tsd-anchor-link" id="run.run-1"><span class="tsd-kind-call-signature">run</span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../enums/typedefs.SignalUpdateStatus.html" class="tsd-signature-type tsd-kind-enum">SignalUpdateStatus</a><a href="#run.run-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></li>
+<li class="tsd-signature tsd-anchor-link" id="run.run-1"><span class="tsd-kind-call-signature">run</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">forced</span><span class="tsd-signature-symbol">?</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../enums/typedefs.SignalUpdateStatus.html" class="tsd-signature-type tsd-kind-enum">SignalUpdateStatus</a><a href="#run.run-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></li>
 <li class="tsd-description">
-<h4 class="tsd-returns-title">Returns <a href="../enums/typedefs.SignalUpdateStatus.html" class="tsd-signature-type tsd-kind-enum">SignalUpdateStatus</a></h4><aside class="tsd-sources">
+<div class="tsd-comment tsd-typography"><p>run the actions taken by a signal when it is informed that its dependency signals have been modified/changed. <br>
+the return value should be of the numertic enum kind <a href="../enums/typedefs.SignalUpdateStatus.html" class="tsd-kind-enum">SignalUpdateStatus</a>, which specifies that this signal has been either been:</p>
 <ul>
-<li>Defined in typedefs.ts:44</li></ul></aside></li></ul></section>
+<li><code> 1</code>: updated, and therefore this signal&#39;s observers should be notified (i.e. <em>ran</em> via their <code>run</code> method) </li>
+<li><code> 0</code>: unchanged, and therefore this signal&#39;s observers should be notified if this is their only active dependency</li>
+<li><code>-1</code>: aborted, and therefore this signal&#39;s observer should also abort their <code>run</code> method&#39;s execution if they were queued</li>
+</ul>
+<p>this method may also accept an optional <code>forced</code> parameter, which tells the signal that it is
+being <em>forced</em> to run, even though none of its dependency signals have been executed or changed.
+this information is useful when coding for signals that <em>can</em> be fired independently, such as signal!StateSignal or signal!EffectSignal.</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li>
+<h5><code class="tsd-tag ts-flagOptional">Optional</code> <span class="tsd-kind-parameter">forced</span>: <span class="tsd-signature-type">boolean</span></h5>
+<div class="tsd-comment tsd-typography"><p>was this signal <em>forced</em> to run independently?</p>
+</div>
+<div class="tsd-comment tsd-typography"></div></li></ul></div>
+<h4 class="tsd-returns-title">Returns <a href="../enums/typedefs.SignalUpdateStatus.html" class="tsd-signature-type tsd-kind-enum">SignalUpdateStatus</a></h4><p>the update status of this signal, specifying whether or not it has changed, or if it has been aborted</p>
+
+<div class="tsd-comment tsd-typography"></div><aside class="tsd-sources">
+<ul>
+<li>Defined in src/typedefs.ts:136</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member"><a id="postrun" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <span>postrun</span><a href="#postrun" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
 <li class="tsd-signature tsd-anchor-link" id="postrun.postrun-1"><span class="tsd-kind-call-signature">postrun</span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#postrun.postrun-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></li>
 <li class="tsd-description">
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
+<div class="tsd-comment tsd-typography"><p>specify actions that need to be taken <strong>after</strong> an update cycle has fully propagated till the end. <br>
+the order in which <code>postrun</code>s will be execuded will be in the reverse order in which they were first encountered (i.e: last in, last out).
+meaning that if all three singals <code>A</code>, <code>B</code>, and <code>C</code>, had <code>postrun</code> methods on them, and the order of execution was:
+<code>A -&gt; B -&gt; C</code>, then all <code>postrun</code>s will run in the order: <code>[C.postrun, B.postrun, A.postrun]</code> (similar to a stack popping).</p>
+</div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+<div class="tsd-comment tsd-typography"></div><aside class="tsd-sources">
 <ul>
-<li>Defined in typedefs.ts:45</li></ul></aside></li></ul></section>
+<li>Defined in src/typedefs.ts:143</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member"><a id="bindMethod" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>bind<wbr/>Method</span><a href="#bindMethod" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
 <li class="tsd-signature tsd-anchor-link" id="bindMethod.bindMethod-1"><span class="tsd-kind-call-signature">bind<wbr/>Method</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type tsd-kind-type-parameter">M</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">method_name</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="typedefs.Signal.html" class="tsd-signature-type tsd-kind-interface">Signal</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type tsd-kind-type-parameter">T</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[</span><span class="tsd-signature-type tsd-kind-type-parameter">M</span><span class="tsd-signature-symbol">]</span><a href="#bindMethod.bindMethod-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></li>
 <li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>a utility method defined in signal!SimpleSignal, which allows one to bind a certain method (by name) to <em>this</em> instance of a signal,
+and therefore make that method freeable/seperable from <em>this</em> signal. <br>
+this method is used by all signal classes&#39;s static <a href="typedefs.SignalClass.html#create" class="tsd-kind-method">create</a> mehod, which is supposed to construct a signal in
+a fashion similar to SolidJS, and return an array containing important control functions of the created signal.
+most, if not all, of these control function are generally plain old signal methods that have been bounded to the created signal instance.</p>
+</div>
 <section class="tsd-panel">
 <h4>Type Parameters</h4>
 <ul class="tsd-type-parameter-list">
@@ -131,9 +207,10 @@
 <ul class="tsd-parameter-list">
 <li>
 <h5><span class="tsd-kind-parameter">method_name</span>: <span class="tsd-signature-type tsd-kind-type-parameter">M</span></h5></li></ul></div>
-<h4 class="tsd-returns-title">Returns <a href="typedefs.Signal.html" class="tsd-signature-type tsd-kind-interface">Signal</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type tsd-kind-type-parameter">T</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[</span><span class="tsd-signature-type tsd-kind-type-parameter">M</span><span class="tsd-signature-symbol">]</span></h4><aside class="tsd-sources">
+<h4 class="tsd-returns-title">Returns <a href="typedefs.Signal.html" class="tsd-signature-type tsd-kind-interface">Signal</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type tsd-kind-type-parameter">T</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[</span><span class="tsd-signature-type tsd-kind-type-parameter">M</span><span class="tsd-signature-symbol">]</span></h4>
+<div class="tsd-comment tsd-typography"></div><aside class="tsd-sources">
 <ul>
-<li>Defined in typedefs.ts:46</li></ul></aside></li></ul></section></section></div>
+<li>Defined in src/typedefs.ts:151</li></ul></aside></li></ul></section></section></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
@@ -164,12 +241,13 @@
 <li><a href="#bindMethod" class=""><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-2048"></use></svg><span>bind<wbr/>Method</span></a></li></ul></div></details></div>
 <div class="site-menu">
 <nav id="tsd-sidebar-links" class="tsd-navigation"><a href="https://github.com/omar-azmi/tsignal_ts" target="_blank">github</a><a href="/tsignal_ts/" target="_blank">readme</a></nav>
-<nav class="tsd-navigation"><a href="../index.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><g id="icon-4"><rect fill="var(--color-icon-background)" stroke="var(--color-ts-namespace)" stroke-width="1.5" x="1" y="1" width="22" height="22" rx="6"></rect><path d="M9.33 16V7.24H10.77L13.446 14.74C13.43 14.54 13.41 14.296 13.386 14.008C13.37 13.712 13.354 13.404 13.338 13.084C13.33 12.756 13.326 12.448 13.326 12.16V7.24H14.37V16H12.93L10.266 8.5C10.282 8.692 10.298 8.936 10.314 9.232C10.33 9.52 10.342 9.828 10.35 10.156C10.366 10.476 10.374 10.784 10.374 11.08V16H9.33Z" fill="var(--color-text)"></path></g></svg><span>tsignal_<wbr/>ts -<wbr/> v0.1.1</span></a>
+<nav class="tsd-navigation"><a href="../index.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><g id="icon-4"><rect fill="var(--color-icon-background)" stroke="var(--color-ts-namespace)" stroke-width="1.5" x="1" y="1" width="22" height="22" rx="6"></rect><path d="M9.33 16V7.24H10.77L13.446 14.74C13.43 14.54 13.41 14.296 13.386 14.008C13.37 13.712 13.354 13.404 13.338 13.084C13.33 12.756 13.326 12.448 13.326 12.16V7.24H14.37V16H12.93L10.266 8.5C10.282 8.692 10.298 8.936 10.314 9.232C10.33 9.52 10.342 9.828 10.35 10.156C10.366 10.476 10.374 10.784 10.374 11.08V16H9.33Z" fill="var(--color-text)"></path></g></svg><span>tsignal_<wbr/>ts -<wbr/> v0.1.2-<wbr/>c</span></a>
 <ul class="tsd-small-nested-navigation">
+<li><a href="../modules/async_signal.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-4"></use></svg><span>async_<wbr/>signal</span></a></li>
 <li><a href="../modules/context.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-4"></use></svg><span>context</span></a></li>
 <li><a href="../modules/funcdefs.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-4"></use></svg><span>funcdefs</span></a></li>
-<li><a href="../modules/mapped_signal.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-4"></use></svg><span>mapped_<wbr/>signal</span></a></li>
 <li><a href="../modules/mod.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-4"></use></svg><span>mod</span></a></li>
+<li><a href="../modules/record_signal.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-4"></use></svg><span>record_<wbr/>signal</span></a></li>
 <li><a href="../modules/signal.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-4"></use></svg><span>signal</span></a></li>
 <li>
 <details class="tsd-index-accordion" open data-key="typedefs"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><use href="#icon-chevronDown"></use></svg><a href="../modules/typedefs.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-4"></use></svg><span>typedefs</span></a></summary>
@@ -185,6 +263,7 @@
 <li><a href="../types/typedefs.Updater.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-4194304"></use></svg><span>Updater</span></a></li>
 <li><a href="../types/typedefs.Accessor.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-4194304"></use></svg><span>Accessor</span></a></li>
 <li><a href="../types/typedefs.Setter.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-4194304"></use></svg><span>Setter</span></a></li>
+<li><a href="../types/typedefs.AsyncSetter.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-4194304"></use></svg><span>Async<wbr/>Setter</span></a></li>
 <li><a href="../types/typedefs.Runner.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-4194304"></use></svg><span>Runner</span></a></li>
 <li><a href="typedefs.Signal.html" class="current"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><g id="icon-256"><rect fill="var(--color-icon-background)" stroke="var(--color-ts-interface)" stroke-width="1.5" x="1" y="1" width="22" height="22" rx="6"></rect><path d="M9.51 16V15.016H11.298V8.224H9.51V7.24H14.19V8.224H12.402V15.016H14.19V16H9.51Z" fill="var(--color-text)"></path></g></svg><span>Signal</span></a></li>
 <li><a href="typedefs.SignalClass.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-256"></use></svg><span>Signal<wbr/>Class</span></a></li>
