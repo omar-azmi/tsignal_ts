@@ -4,6 +4,7 @@ export {
 	bind_array_pop,
 	bind_array_push,
 	bind_map_clear,
+	bind_map_delete,
 	bind_map_get,
 	bind_map_set,
 	bind_set_add,

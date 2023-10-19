@@ -2,12 +2,10 @@
  * @module
 */
 
-import { DEBUG, bindMethodToSelfByName, bind_array_clear, bind_array_pop, bind_array_push, bind_map_clear, bind_map_get, bind_map_set, bind_set_add, bind_set_clear, bind_set_delete, bind_set_has } from "./deps.ts"
-import { hash_ids } from "./funcdefs.ts"
+import { DEBUG, bindMethodToSelfByName, bind_array_clear, bind_array_pop, bind_array_push, bind_map_clear, bind_map_delete, bind_map_get, bind_map_set, bind_set_add, bind_set_clear, bind_set_delete, bind_set_has } from "./deps.ts"
+import { hash_ids, symmetric_difference_of_sets } from "./funcdefs.ts"
 import { EffectFn, MemoFn, SimpleSignalInstance } from "./signal.ts"
 import { EqualityFn, FROM_ID, HASHED_IDS, ID, Signal, SignalClass, SignalUpdateStatus, TO_ID, UNTRACKED_ID } from "./typedefs.ts"
-
-// TODO: implement signal swapping (with either a new signal (and the old one gets deleted), or an existing one). for a signal to be swappable, it must be of dynamic kind (ie carries `SelfIdentification`)
 
 export interface Context_Dynamic {
 	setValue: <T>(id: ID, new_value: T) => void,
@@ -25,13 +23,14 @@ export interface Context_Batch {
 }
 
 export class Context {
-	readonly addEdge: (src_id: FROM_ID, dst_id: TO_ID) => void
+	readonly addEdge: (src_id: FROM_ID, dst_id: TO_ID) => boolean
 	readonly delEdge: (src_id: FROM_ID, dst_id: TO_ID) => boolean
 	readonly newId: () => ID
 	readonly getId: (id: ID) => Signal<any> | undefined
 	readonly setId: (id: ID, signal: Signal<any>) => void
 	readonly delId: (id: ID) => boolean
 	readonly runId: (id: ID) => boolean
+	readonly swapId: (id1: ID, id2: ID) => void
 	readonly addClass: <SIGNAL_CLASS extends SignalClass>(factory_fn: (ctx: Context) => SIGNAL_CLASS) => SIGNAL_CLASS["create"]
 	readonly getClass: <SIGNAL_CLASS extends SignalClass>(factory_fn: (ctx: Context) => SIGNAL_CLASS) => SIGNAL_CLASS
 	readonly batch: Context_Batch
@@ -48,7 +47,9 @@ export class Context {
 			fmap_get = bind_map_get(fmap),
 			rmap_get = bind_map_get(rmap),
 			fmap_set = bind_map_set(fmap),
-			rmap_set = bind_map_set(rmap)
+			rmap_set = bind_map_set(rmap),
+			fmap_delete = bind_map_delete(fmap),
+			rmap_delete = bind_map_delete(rmap)
 
 		const
 			ids_to_visit_cache = new Map<HASHED_IDS, Set<ID>>(),
@@ -80,7 +81,8 @@ export class Context {
 		const
 			all_signals = new Map<ID, Signal<any>>(),
 			all_signals_get = bind_map_get(all_signals),
-			all_signals_set = bind_map_set(all_signals)
+			all_signals_set = bind_map_set(all_signals),
+			all_signals_delete = bind_map_delete(all_signals)
 
 		const
 			to_visit_this_cycle = new Set<ID>(),
@@ -172,7 +174,7 @@ export class Context {
 			}
 		}
 
-		this.addEdge = (src_id: FROM_ID, dst_id: TO_ID) => {
+		this.addEdge = (src_id: FROM_ID, dst_id: TO_ID): boolean => {
 			const forward_items = fmap_get(src_id) ?? (
 				fmap_set(src_id, new Set()) &&
 				fmap_get(src_id)!
@@ -182,10 +184,17 @@ export class Context {
 				if (!rmap_get(dst_id)?.add(src_id)) {
 					rmap_set(dst_id, new Set([src_id]))
 				}
+				return true
 			}
+			return false
 		}
-		// @ts-ignore: TODO implement signal deletion
-		this.delEdge = undefined
+		this.delEdge = (src_id: FROM_ID, dst_id: TO_ID): boolean => {
+			if (
+				fmap_get(src_id)?.delete(dst_id) &&
+				rmap_get(dst_id)?.delete(src_id)
+			) { return true }
+			return false
+		}
 
 		this.newId = () => {
 			// clear the `ids_to_visit_cache`, because the old cache won't include this new signal in any of this signal's dependency pathways.
@@ -195,8 +204,39 @@ export class Context {
 		}
 		this.getId = all_signals_get
 		this.setId = all_signals_set
-		// @ts-ignore: TODO implement signal deletion
-		this.delId = undefined
+		this.delId = (id: ID): boolean => {
+			if (all_signals_delete(id)) {
+				const
+					forward_items = fmap_get(id),
+					reverse_items = rmap_get(id)
+				forward_items?.forEach((dst_id: TO_ID) => { rmap_get(dst_id)?.delete(id) })
+				reverse_items?.forEach((src_id: FROM_ID) => { fmap_get(src_id)?.delete(id) })
+				forward_items?.clear()
+				reverse_items?.clear()
+				fmap_delete(id)
+				rmap_delete(id)
+				return true
+			}
+			return false
+		}
+		this.swapId = (id1: number, id2: number) => {
+			const
+				fitems1 = fmap_get(id1) ?? new Set<number>(),
+				fitems2 = fmap_get(id2) ?? new Set<number>(),
+				[funiques1, funiques2] = symmetric_difference_of_sets(fitems1, fitems2)
+			funiques1.forEach((dst_id: TO_ID) => fmap_get(dst_id)?.delete(id1))
+			funiques2.forEach((dst_id: TO_ID) => fmap_get(dst_id)?.delete(id2))
+			fmap_set(id1, fitems2)
+			fmap_set(id2, fitems1)
+			const
+				ritems1 = rmap_get(id1) ?? new Set<number>(),
+				ritems2 = rmap_get(id2) ?? new Set<number>(),
+				[runiques1, runiques2] = symmetric_difference_of_sets(ritems1, ritems2)
+			runiques1.forEach((dst_id: TO_ID) => rmap_get(dst_id)?.delete(id1))
+			runiques2.forEach((dst_id: TO_ID) => rmap_get(dst_id)?.delete(id2))
+			rmap_set(id1, fitems2)
+			rmap_set(id2, fitems1)
+		}
 		this.runId = (id: ID): boolean => {
 			const will_fire_immediately = batch_nestedness <= 0
 			if (will_fire_immediately) {

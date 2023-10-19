@@ -2,7 +2,7 @@
  * @module
 */
 
-import { DEBUG, THROTTLE_REJECT, noop, throttle } from "./deps.ts"
+import { DEBUG, THROTTLE_REJECT, bind_set_delete, bind_set_has, noop, throttle } from "./deps.ts"
 import { EqualityCheck, EqualityFn, FROM_ID, HASHED_IDS, ID, Signal, TO_ID, UNTRACKED_ID } from "./typedefs.ts"
 
 export const default_equality = (<T>(v1: T, v2: T) => (v1 === v2)) satisfies EqualityFn<any>
@@ -45,6 +45,20 @@ export const throttlingEquals = <T>(delta_time_ms: number, base_equals?: Equalit
 export const hash_ids = (ids: ID[]): HASHED_IDS => {
 	const sqrt_len = ids.length ** 0.5
 	return ids.reduce((sum, id) => sum + id * (id + sqrt_len), 0)
+}
+
+export const intersection_of_sets = <T>(set1: Set<T>, set2: Set<T>): Array<T> => {
+	return [...set1].filter(bind_set_has(set2))
+}
+
+export const symmetric_difference_of_sets = <T>(set1: Set<T>, set2: Set<T>): [uniques1: Set<T>, uniques2: Set<T>] => {
+	const
+		union_arr = intersection_of_sets(set1, set2),
+		uniques1 = new Set(set1),
+		uniques2 = new Set(set2)
+	union_arr.forEach(bind_set_delete(uniques1))
+	union_arr.forEach(bind_set_delete(uniques2))
+	return [uniques1, uniques2]
 }
 
 export const log_get_request = /* @__PURE__ */ DEBUG.LOG ? (all_signals_get: (id: ID) => Signal<any> | undefined, observed_id: FROM_ID, observer_id?: TO_ID | UNTRACKED_ID) => {
