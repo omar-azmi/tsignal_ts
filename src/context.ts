@@ -31,6 +31,7 @@ export class Context {
 	readonly delId: (id: ID) => boolean
 	readonly runId: (id: ID) => boolean
 	readonly swapId: (id1: ID, id2: ID) => void
+	readonly clearCache: () => void
 	readonly addClass: <SIGNAL_CLASS extends SignalClass>(factory_fn: (ctx: Context) => SIGNAL_CLASS) => SIGNAL_CLASS["create"]
 	readonly getClass: <SIGNAL_CLASS extends SignalClass>(factory_fn: (ctx: Context) => SIGNAL_CLASS) => SIGNAL_CLASS
 	readonly batch: Context_Batch
@@ -184,6 +185,8 @@ export class Context {
 				if (!rmap_get(dst_id)?.add(src_id)) {
 					rmap_set(dst_id, new Set([src_id]))
 				}
+				// the visit cache must be cleared so that the updated dependency tree can be rebuilt
+				ids_to_visit_cache_clear()
 				return true
 			}
 			return false
@@ -192,7 +195,11 @@ export class Context {
 			if (
 				fmap_get(src_id)?.delete(dst_id) &&
 				rmap_get(dst_id)?.delete(src_id)
-			) { return true }
+			) {
+				// the visit cache must be cleared so that the updated dependency tree can be rebuilt
+				ids_to_visit_cache_clear()
+				return true
+			}
 			return false
 		}
 
@@ -215,28 +222,30 @@ export class Context {
 				reverse_items?.clear()
 				fmap_delete(id)
 				rmap_delete(id)
+				// the visit cache must be cleared so that the updated dependency tree can be rebuilt
+				ids_to_visit_cache_clear()
 				return true
 			}
 			return false
 		}
 		this.swapId = (id1: number, id2: number) => {
 			const
-				fitems1 = fmap_get(id1) ?? new Set<number>(),
-				fitems2 = fmap_get(id2) ?? new Set<number>(),
-				[funiques1, funiques2] = symmetric_difference_of_sets(fitems1, fitems2)
-			funiques1.forEach((dst_id: TO_ID) => fmap_get(dst_id)?.delete(id1))
-			funiques2.forEach((dst_id: TO_ID) => fmap_get(dst_id)?.delete(id2))
-			fmap_set(id1, fitems2)
-			fmap_set(id2, fitems1)
-			const
-				ritems1 = rmap_get(id1) ?? new Set<number>(),
-				ritems2 = rmap_get(id2) ?? new Set<number>(),
-				[runiques1, runiques2] = symmetric_difference_of_sets(ritems1, ritems2)
-			runiques1.forEach((dst_id: TO_ID) => rmap_get(dst_id)?.delete(id1))
-			runiques2.forEach((dst_id: TO_ID) => rmap_get(dst_id)?.delete(id2))
-			rmap_set(id1, fitems2)
-			rmap_set(id2, fitems1)
+				signal1 = all_signals_get(id1),
+				signal2 = all_signals_get(id2)
+			all_signals_set(id1, signal2!)
+			all_signals_set(id2, signal1!)
+			if (signal1) {
+				signal1.id = id2
+				if (signal1.rid) { signal1.rid = id2 }
+			}
+			if (signal2) {
+				signal2.id = id1
+				if (signal2.rid) { signal2.rid = id1 }
+			}
+			// the visit cache must be cleared so that the updated dependency tree can be rebuilt
+			ids_to_visit_cache_clear()
 		}
+		this.clearCache = ids_to_visit_cache_clear
 		this.runId = (id: ID): boolean => {
 			const will_fire_immediately = batch_nestedness <= 0
 			if (will_fire_immediately) {
