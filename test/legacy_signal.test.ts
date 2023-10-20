@@ -57,12 +57,17 @@ Deno.test("create and execute an effect", () => {
 	})
 	assert(times_effect_was_run2 === 0 && times_effect_was_run === 1)
 	setCounter(2)
-	assert(times_effect_was_run2 === 0) // because `effect2` has never been run before (due to `{ defer: undefined }`), it must at least run once so as to capture all of its dependencies
+	assert(times_effect_was_run2 === 0 && times_effect_was_run === 1) // because `effect2` has never been run before (due to `{ defer: undefined }`), it must at least run once so as to capture all of its dependencies
 	fireEffect2() // dependencies of `effect2` have been captured now, and `effect2` will now react to any of its two dependencies
+	assert(times_effect_was_run2 === 1 as number && times_effect_was_run === 1 as number)
 	setCounter(5)
-	assert(times_effect_was_run2 === 1 as number)
+	assert(times_effect_was_run2 === 2 as number)
 	setCounter(5.0) //same value as before, therefore, signal should NOT notify its `effect2` observer to rerun
-	assert(times_effect_was_run2 === 1 as number)
+	assert(times_effect_was_run2 === 2 as number)
+	fireEffect2() // manually firing `effect2` to run again
+	assert(times_effect_was_run2 === 3 as number)
+	fireEffect1() // manually firing and running `effect1`, and running `effect2` as a consequence
+	assert(times_effect_was_run2 === 4 as number && times_effect_was_run === 2 as number)
 	//TODO trigger cleanup and implement async testing
 })
 

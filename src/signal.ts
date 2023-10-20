@@ -254,10 +254,14 @@ export const EffectSignal_Factory = (ctx: Context) => {
 
 		/** a non-untracked observer (which is what all new observers are) depending on an effect signal will result in the triggering of effect function.
 		 * this is an intentional design choice so that effects can be scaffolded on top of other effects.
+		 * TODO: reconsider, because you can also check for `this.rid !== 0` to determine that `this.fn` effect function has never run before, thus it must run at least once if the observer is not untracked_id
+		 * is it really necessary for us to rerun `this.fn` effect function for every new observer? it seems to create chaos rather than reducing it.
+		 * UPDATE: decided NOT to re-run on every new observer
+		 * TODO: cleanup this messy doc and redeclare how createEffect works
 		*/
 		get(observer_id?: TO_ID | UNTRACKED_ID): void {
 			if (observer_id) {
-				this.run()
+				if (this.rid) { this.run() }
 				super.get(observer_id)
 			}
 		}
