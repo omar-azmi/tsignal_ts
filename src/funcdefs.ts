@@ -7,6 +7,7 @@ import { EqualityCheck, EqualityFn, FROM_ID, HASHED_IDS, ID, Signal, TO_ID, UNTR
 
 export const default_equality = (<T>(v1: T, v2: T) => (v1 === v2)) satisfies EqualityFn<any>
 export const falsey_equality = (<T>(v1: T, v2: T) => false) satisfies EqualityFn<any>
+export const parseEquality = <T>(equals: EqualityCheck<T>) => (equals === false ? falsey_equality : (equals ?? default_equality)) satisfies EqualityFn<any>
 
 /** transforms a regular equality check function ({@link SimpleSignalConfig.equals}) into a one that throttles when called too frequently. <br>
  * this means that a singal composed of this as its `equals` function will limit propagating itself further, until at least `delta_time_ms`
@@ -34,7 +35,7 @@ export const falsey_equality = (<T>(v1: T, v2: T) => false) satisfies EqualityFn
 */
 export const throttlingEquals = <T>(delta_time_ms: number, base_equals?: EqualityCheck<T>): EqualityCheck<T> => {
 	const
-		base_equals_fn = base_equals === false ? falsey_equality : (base_equals ?? default_equality),
+		base_equals_fn = parseEquality(base_equals),
 		throttled_equals = throttle(delta_time_ms, base_equals_fn)
 	return (prev_value: T | undefined, new_value: T) => {
 		const is_equal = throttled_equals(prev_value, new_value)

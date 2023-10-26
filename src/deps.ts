@@ -20,3 +20,5 @@ export type { CallableFunctionsOf, ConstructorOf, MethodsOf, StaticImplements } 
 export const enum DEBUG {
 	LOG = 0,
 }
+
+export const object_entries = Object.entries

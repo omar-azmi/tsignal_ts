@@ -110,7 +110,7 @@ export interface Signal<T> {
 	 * }
 	 * ```
 	*/
-	set(...args: any[]): boolean
+	set?(...args: any[]): boolean
 
 	/** specify actions that need to be taken __before__ an update cycle has even begun propagating. <br>
 	 * TODO: CURRENTLY NOT IMPLEMENTED.

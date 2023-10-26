@@ -176,6 +176,7 @@ export class Context {
 		}
 
 		this.addEdge = (src_id: FROM_ID, dst_id: TO_ID): boolean => {
+			if (src_id + dst_id <= (0 as UNTRACKED_ID)) { return false }
 			const forward_items = fmap_get(src_id) ?? (
 				fmap_set(src_id, new Set()) &&
 				fmap_get(src_id)!

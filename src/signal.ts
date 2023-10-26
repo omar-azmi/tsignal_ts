@@ -4,7 +4,7 @@
 
 import { Context } from "./context.ts"
 import { DEBUG, StaticImplements, bindMethodToSelfByName } from "./deps.ts"
-import { default_equality, falsey_equality, log_get_request } from "./funcdefs.ts"
+import { log_get_request, parseEquality } from "./funcdefs.ts"
 import { Accessor, EqualityCheck, EqualityFn, ID, Setter, SignalClass, SignalUpdateStatus, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.ts"
 
 // TODO: add `SimpleSignalConfig.deps: ID[]` option to manually enforce dependance on certain signal ids. this can be useful when you want a
@@ -65,7 +65,7 @@ export const SimpleSignal_Factory = (ctx: Context) => {
 			this.rid = id
 			this.name = name
 			this.value = value
-			this.equals = equals === false ? falsey_equality : (equals ?? default_equality)
+			this.equals = parseEquality(equals)
 		}
 
 		get(observer_id?: TO_ID | UNTRACKED_ID): T {
