@@ -1,13 +1,31 @@
 // Set signal, Array signal, Map signal, etc... with method overloading to signal dirty when mutated
 // use a "depends-on" array of ids approach?
 
-import { ConstructorOf, bind_map_get, bind_map_set, object_entries } from "./deps.ts"
-import { parseEquality } from "./funcdefs.ts"
+import { Context } from "./context.ts"
+import { ConstructorOf, StaticImplements, bind_map_get, bind_map_set, object_entries } from "./deps.ts"
+import { falsey_equality, parseEquality } from "./funcdefs.ts"
+import { SimpleSignalConfig, SimpleSignal_Factory } from "./signal.ts"
 import { ID, Signal, SignalClass } from "./typedefs.ts"
 
 // also, in context.ts, add a reversible action function
 
-type Reactive<T> = T
+const ProxySignal_Factory = (ctx: Context) => {
+	class ProxySignal {
+
+		static create<T>(target: T, handler: ProxyHandler) {
+
+		}
+	}
+}
+
+interface ReactiveClass<T> {
+	new(...args: any[]): T
+	runId(id: ID): boolean
+}
+
+interface Reactive<T> {
+
+}
 
 interface ReactiveSignal<T> extends Signal<T> {
 	value: Reactive<T>
@@ -30,10 +48,118 @@ const classToSignal_Factory = <CLASS extends ConstructorOf<T>, T>(obj_class: CLA
 	}
 }
 
-const createKlass = <CLASS extends ConstructorOf<any>, T extends (CLASS extends ConstructorOf<infer R> ? R : any)>(base_class: CLASS) => {
+const createKlass_Factory = <CLASS extends ConstructorOf<any>, T extends (CLASS extends ConstructorOf<infer R> ? R : any)>(base_class: CLASS) => {
 	return class SubKlass extends base_class {
 		static create(...args: ConstructorParameters<CLASS>): T {
 			return new this(...args)
+		}
+	}
+}
+
+const MapSignal_Factory0 = (ctx: Context) => {
+	const runId = ctx.runId
+	const mutation_methods: (keyof Map<any, any>)[] = ["clear", "delete", "set",]
+
+	return class MapSignal<K, V> extends Map<K, V> implements StaticImplements<SignalClass, typeof MapSignal> {
+		constructor(...args: ConstructorParameters<ConstructorOf<Map<K, V>>>) {
+			super(...args)
+		}
+
+		clear(): void {
+			const has_mutated = this.size !== 0
+			super.clear()
+			if (has_mutated) { runId(this.id) }
+		}
+
+		delete(key: K): boolean {
+			const has_mutated = super.delete(key)
+			if (has_mutated) { runId(this.id) }
+			return has_mutated
+		}
+
+		// @ts-ignore: signals too have the same method with a different signature
+		set(key: K, value: V): this {
+			const has_mutated = !super.has(key) || super.get(key) === value
+			super.set(key, value)
+			if (has_mutated) { runId(this.id) }
+			return this
+		}
+
+		static create<KT, VT>(...args: ConstructorParameters<ConstructorOf<Map<KT, VT>>>): [id: number] {
+			return [5]
+		}
+	}
+}
+
+const MUTABLE_ID = /* @__PURE__ */ Symbol("id field of a mutable subclass")
+
+const MapStateSignal_Factory = (ctx: Context) => {
+	const runId = ctx.runId
+	class MutableMapClass<K, V> extends Map<K, V> {
+		[MUTABLE_ID]: ID = 0
+
+		clear(): void {
+			const has_mutated = this.size !== 0
+			super.clear()
+			if (has_mutated) { runId(this[MUTABLE_ID]) }
+		}
+
+		delete(key: K): boolean {
+			const has_mutated = super.delete(key)
+			if (has_mutated) { runId(this[MUTABLE_ID]) }
+			return has_mutated
+		}
+
+		set(key: K, value: V): this {
+			const has_mutated = !super.has(key) || super.get(key) === value
+			super.set(key, value)
+			if (has_mutated) { runId(this[MUTABLE_ID]) }
+			return this
+		}
+	}
+	return class MapStateSignal<K, V> extends ctx.getClass(SimpleSignal_Factory)<Map<K, V>> {
+		declare value: Map<K, V>
+		declare fn: never
+		declare prerun: never
+		declare postrun: never
+
+		constructor(
+			value: Map<K, V>,
+			config?: SimpleSignalConfig<Map<K, V>>,
+		) {
+			super(value, { ...config, equals: falsey_equality })
+		}
+
+
+	}
+
+	class MapSignal<K, V> extends Map<K, V> implements StaticImplements<SignalClass, typeof MapSignal> {
+		constructor(...args: ConstructorParameters<ConstructorOf<Map<K, V>>>) {
+			super(...args)
+		}
+
+		clear(): void {
+			const has_mutated = this.size !== 0
+			super.clear()
+			if (has_mutated) { runId(this.id) }
+		}
+
+		delete(key: K): boolean {
+			const has_mutated = super.delete(key)
+			if (has_mutated) { runId(this.id) }
+			return has_mutated
+		}
+
+		// @ts-ignore: signals too have the same method with a different signature
+		set(key: K, value: V): this {
+			const has_mutated = !super.has(key) || super.get(key) === value
+			super.set(key, value)
+			if (has_mutated) { runId(this.id) }
+			return this
+		}
+
+		static create<KT, VT>(...args: ConstructorParameters<ConstructorOf<Map<KT, VT>>>): [id: number] {
+			return [5]
 		}
 	}
 }
@@ -49,24 +175,6 @@ type InterceptMutationMethods<T extends object> = {
 type InterceptMutationMembers<T extends object> = {
 	[M in keyof T]?: undefined | false | ((this: T, prev_value: T[M] | undefined, new_value: T[M]) => boolean)
 }
-
-/*
-type MutationInterceptionMap<T extends object, M extends keyof T = any> = Map<M, T[M] extends SomeMethod<T, infer ARGS, any> ?
-	(undefined | false | ((this: T, ...args: ARGS) => boolean)) :
-	never
->
-
-type MapUnion<M1 extends Map<any, any>, M2 extends Map<any, any>> = M1 extends Map<infer K1, infer V1> ? M2 extends Map<infer K2, infer V2> ? Map<K1 | K2, V1 | V2> : never : never
-
-type Zo2 = MapUnion<Map<string, number>, Map<boolean, number>>
-
-// type MappedTypeToMap<MAPPED> = { [M in keyof MAPPED]?: Map<M, MAPPED[M]> }[keyof MAPPED]
-type MappedTypeToMap<MAPPED> = Map<keyof MAPPED, MAPPED[keyof MAPPED]>
-
-type MutationInterceptionMap2<T extends object> = MappedTypeToMap<MutationInterception<T>>
-*/
-
-const falsey_mutation = () => false
 
 const createProxyHandler = <T extends object>(
 	intercept_members: InterceptMutationMembers<T> | undefined = {},
@@ -85,7 +193,7 @@ const createProxyHandler = <T extends object>(
 	}
 	for (const [method_key, method_mutation_equals_fn] of object_entries(intercept_methods) as unknown as [keyof T, undefined | false | ((this: T, ...args: any[]) => boolean)][]) {
 		const
-			equals_fn: (this: T, ...args: any[]) => boolean = method_mutation_equals_fn || falsey_mutation,
+			equals_fn: (this: T, ...args: any[]) => boolean = method_mutation_equals_fn || falsey_equality,
 			overloaded_method = function (this: T, ...args: any[]) {
 				(this[method_key] as CallableFunction)(...args)
 				return equals_fn.apply(this, args)

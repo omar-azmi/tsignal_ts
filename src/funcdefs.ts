@@ -6,7 +6,7 @@ import { DEBUG, THROTTLE_REJECT, bind_set_delete, bind_set_has, noop, throttle }
 import { EqualityCheck, EqualityFn, FROM_ID, HASHED_IDS, ID, Signal, TO_ID, UNTRACKED_ID } from "./typedefs.ts"
 
 export const default_equality = (<T>(v1: T, v2: T) => (v1 === v2)) satisfies EqualityFn<any>
-export const falsey_equality = (<T>(v1: T, v2: T) => false) satisfies EqualityFn<any>
+export const falsey_equality = (<T>() => false) satisfies EqualityFn<any>
 export const parseEquality = <T>(equals: EqualityCheck<T>) => (equals === false ? falsey_equality : (equals ?? default_equality)) satisfies EqualityFn<any>
 
 /** transforms a regular equality check function ({@link SimpleSignalConfig.equals}) into a one that throttles when called too frequently. <br>
