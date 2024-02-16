@@ -30,7 +30,7 @@ Deno.test("test logging", () => {
 })
 
 Deno.test("test cached performance", () => {
-	// @ts-ignore: don't want our performace test impacted by console logging
+	// @ts-ignore: don't want our performance test impacted by console logging
 	DEBUG.LOG = 0
 	let start = performance.now()
 	for (let A_value = 0; A_value < 100_000; A_value++) {
@@ -44,9 +44,9 @@ Deno.test("test cached performance", () => {
 })
 
 Deno.test("test uncached performance", () => {
-	// @ts-ignore: don't want our performace test impacted by console logging
+	// @ts-ignore: don't want our performance test impacted by console logging
 	DEBUG.LOG = 0
-	// twice as slow as chached's performance
+	// twice as slow as cached's performance
 	const clear_dfs_cache = ctx.newId
 	let start = performance.now()
 	for (let A_value = 0; A_value < 100_000; A_value++) {

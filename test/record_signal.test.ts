@@ -57,7 +57,7 @@ const
 		}
 		return [legal_rect_keys, legal_rect_values]
 	}, { name: "AllLegalRects", value: [] }),
-	[, getBoundinBox] = createMemo<BoundingBox>((id) => {
+	[, getBoundingBox] = createMemo<BoundingBox>((id) => {
 		const [legal_rects, ...changed_keys] = getChangedLegalRects(id)
 		const bb: BoundingBox = {
 			minY: Math.min(2000, ...changed_keys.map((i) => legal_rects[i].top)),
