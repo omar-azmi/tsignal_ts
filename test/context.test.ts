@@ -6,7 +6,7 @@ const
 	createState = ctx.addClass(StateSignal_Factory),
 	createMemo = ctx.addClass(MemoSignal_Factory)
 
-/** our signals are initally organized as follows:
+/** our signals are initially organized as follows:
  * A────┬──────────────┬──────────────┐
  *     ╭┼╮            ╭┼╮             │
  * B ──┘│└───┬────┬───┘│└────────┐    │
@@ -80,7 +80,7 @@ Deno.test("test signal dependency edge deletion and manual addition", () => {
 	setA(1)
 	console.log("deleting the edge A -> D, which should in turn stop the updating of D, I, and J")
 	ctx.delEdge(idA, idD)
-	/** our signals are initally organized as follows:
+	/** our signals are initially organized as follows:
 	 * A───────────────────┬──────────────┐
 	 *                    ╭┼╮             │
 	 * B ────────┬────┬───┘│└────────┐    │

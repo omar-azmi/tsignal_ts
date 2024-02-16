@@ -11,10 +11,10 @@ import { Accessor, EqualityCheck, EqualityFn, ID, Setter, SignalClass, SignalUpd
 //	signal to defer its first run, yet you also want that signal to react to any of its dependencies, before this signal ever gets run
 
 export interface SimpleSignalConfig<T> {
-	/** give a name to the signal for debuging purposes */
+	/** give a name to the signal for debugging purposes */
 	name?: string
 
-	/** when a signal's value is updated (either through a {@link Setter}, or a change in the value of a dependancy signal in the case of a memo),
+	/** when a signal's value is updated (either through a {@link Setter}, or a change in the value of a dependency signal in the case of a memo),
 	 * then the dependants/observers of THIS signal will only be notified if the equality check function evaluates to a `false`. <br>
 	 * see {@link EqualityCheck} to see its function signature and default behavior when left `undefined`
 	*/

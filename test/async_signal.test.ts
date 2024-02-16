@@ -91,7 +91,7 @@ Deno.test("test asynchronous behavior when old promise is replaced", async () =>
 	eval_after(100, () => assert(A() === 5 && (H() === 5 + 135) && (H() === A() + G()))) // promise_a1 remains unresolved, hence the initial values
 	eval_after(150, () => {
 		setPromiseA(promise_a2).then((v) => {
-			console.log("promise_a2 overrided promise_a1 (which then was unresolved), and promise_a2 is now fulfilled")
+			console.log("promise_a2 overridden promise_a1 (which then was unresolved), and promise_a2 is now fulfilled")
 			assert(true && v === 21)
 		})
 	})
@@ -114,7 +114,7 @@ Deno.test("test promise rejection with rejectable option", async () => {
 
 	console.log(
 		"\n\tasynchronously firing: A with three promises.",
-		"\n\t\tpromise_a1 should be overriden by promise_a2.",
+		"\n\t\tpromise_a1 should be overridden by promise_a2.",
 		"\n\t\tpromise_a2 should be rejected then caught.",
 		"\n\t\tpromise_a3 should be fulfilled"
 	)
@@ -132,11 +132,11 @@ Deno.test("test promise rejection with rejectable option", async () => {
 	eval_after(150, () => {
 		setPromiseA(promise_a2, true).then(
 			(v) => {
-				console.log("promise_a2 overrided promise_a1, and promise_a2 is now fulfilled. THIS SHOULD NOT HAPPED!")
+				console.log("promise_a2 overridden promise_a1, and promise_a2 is now fulfilled. THIS SHOULD NOT HAPPED!")
 				assert(false && v === 21)
 			},
 			(reason) => {
-				console.log("promise_a2 overrided promise_a1, and promise_a2 is now rejected.\n\tthis was logged because setPromiseA was set to be \"rejectable = true\".\n\treason for rejection: ", reason)
+				console.log("promise_a2 overridden promise_a1, and promise_a2 is now rejected.\n\tthis was logged because setPromiseA was set to be \"rejectable = true\".\n\treason for rejection: ", reason)
 				assert(true)
 			}
 		)
