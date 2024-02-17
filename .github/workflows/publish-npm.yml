@@ -1,23 +1,22 @@
-name: publish to npm
+name: publish-to-npm
 
 on:
   workflow_dispatch:
 
 jobs:
-  build:
+  publish-to-npm:
     runs-on: ubuntu-latest
-
     steps:
-      - name: setup node
-        uses: actions/setup-node@v3
-        with:
-          node-version: "18"
-          registry-url: "https://registry.npmjs.org"
-
-      - name: clone repo
+      - name: clone npm repo branch
         uses: actions/checkout@v3
         with:
           ref: "npm"
+
+      - name: setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          registry-url: "https://registry.npmjs.org"
 
       - name: install dependencies
         run: npm ci
