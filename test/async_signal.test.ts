@@ -1,8 +1,7 @@
-import { assert } from "https://deno.land/std/testing/asserts.ts"
-import { DEBUG } from "../src/deps.ts"
+import { assert } from "https://deno.land/std@0.204.0/testing/asserts.ts"
+import { AsyncStateSignal_Factory } from "../src/async_signal.ts"
 import { Context } from "../src/context.ts"
 import { EffectSignal_Factory, LazySignal_Factory, MemoSignal_Factory, StateSignal_Factory } from "../src/signal.ts"
-import { AsyncStateSignal_Factory } from "../src/async_signal.ts"
 
 const wait = (time_ms: number) => {
 	return new Promise<void>((resolve, reject) => { setTimeout(resolve, time_ms) })

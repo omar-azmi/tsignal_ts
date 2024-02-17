@@ -4,7 +4,7 @@
 // at the end of every reaction cycle, log the number of computations done in the console.
 
 import { Context } from "../src/context.ts"
-import { StateSignal_Factory, MemoSignal_Factory, EffectSignal_Factory } from "../src/signal.ts"
+import { EffectSignal_Factory, MemoSignal_Factory, StateSignal_Factory } from "../src/signal.ts"
 import type { Accessor, Setter } from "../src/typedefs.ts"
 
 /** `x` and `y` are relative to the parent-rectangle's top-left corner (which is their (x, y) position). */
@@ -142,4 +142,3 @@ fireRedraw()
 
 // unlike solidjs, you can define all derived signals, such as`MemoSignal`, before declaring the variables used in their computation function.
 // this is because derived signals are deferred of their execution, until the first time someone actually uses them.
-

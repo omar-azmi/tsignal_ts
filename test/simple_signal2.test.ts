@@ -1,5 +1,5 @@
-import { DEBUG } from "../src/deps.ts"
 import { Context } from "../src/context.ts"
+import { DEBUG } from "../src/deps.ts"
 import { EffectSignal_Factory, LazySignal_Factory, MemoSignal_Factory, StateSignal_Factory } from "../src/signal.ts"
 
 const

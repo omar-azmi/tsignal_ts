@@ -1,4 +1,4 @@
-import { assert } from "https://deno.land/std/testing/asserts.ts"
+import { assert } from "https://deno.land/std@0.204.0/testing/asserts.ts"
 import { Context } from "../src/context.ts"
 import { EffectSignal_Factory, LazySignal_Factory, MemoSignal_Factory, StateSignal_Factory, } from "../src/signal.ts"
 
