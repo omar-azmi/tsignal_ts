@@ -14,10 +14,10 @@ import { Accessor, EqualityCheck, EqualityFn, ID, SignalUpdateStatus, TO_ID, UNT
 
 
 export interface RecordSignalConfig<K extends PropertyKey, V> {
-	/** give a name to the signal for debuging purposes */
+	/** give a name to the signal for debugging purposes */
 	name?: string
 
-	/** when a signal's value is updated (either through a {@link Setter}, or a change in the value of a dependancy signal in the case of a memo),
+	/** when a signal's value is updated (either through a {@link Setter}, or a change in the value of a dependency signal in the case of a memo),
 	 * then the dependants/observers of THIS signal will only be notified if the equality check function evaluates to a `false`. <br>
 	 * see {@link EqualityCheck} to see its function signature and default behavior when left `undefined`
 	*/

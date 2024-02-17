@@ -56,7 +56,7 @@ export const AsyncStateSignal_Factory = (ctx: Context) => {
 					}
 				)
 			}
-			// the signal update is first propagated, and then the returned promise is resolved with the value we jsut set
+			// the signal update is first propagated, and then the returned promise is resolved with the value we just set
 			const value_has_changed = super.set(new_value as T)
 			if (value_has_changed) { runId(this.id) }
 			return promise_resolve(new_value as T)

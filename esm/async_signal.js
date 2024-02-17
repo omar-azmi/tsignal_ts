@@ -7,15 +7,10 @@ import { SignalUpdateStatus } from "./typedefs.js";
 export const AsyncStateSignal_Factory = (ctx) => {
     const runId = ctx.runId;
     return class AsyncStateSignal extends ctx.getClass(SimpleSignal_Factory) {
+        /** previous pending promise */
+        promise;
         constructor(value, config) {
             super(value, config);
-            /** previous pending promise */
-            Object.defineProperty(this, "promise", {
-                enumerable: true,
-                configurable: true,
-                writable: true,
-                value: void 0
-            });
         }
         setPromise(new_value, rejectable = false) {
             const _this = this, new_value_is_updater = (typeof new_value === "function") && !(new_value instanceof Promise);
@@ -43,7 +38,7 @@ export const AsyncStateSignal_Factory = (ctx) => {
                     return rejectable ? promise_reject(reason) : promise_forever();
                 });
             }
-            // the signal update is first propagated, and then the returned promise is resolved with the value we jsut set
+            // the signal update is first propagated, and then the returned promise is resolved with the value we just set
             const value_has_changed = super.set(new_value);
             if (value_has_changed) {
                 runId(this.id);

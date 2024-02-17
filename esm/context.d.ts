@@ -14,13 +14,15 @@ export interface Context_Batch {
     scopedBatching: <T extends any = void, ARGS extends any[] = []>(fn: (...args: ARGS) => T, ...args: ARGS) => T;
 }
 export declare class Context {
-    readonly addEdge: (src_id: FROM_ID, dst_id: TO_ID) => void;
+    readonly addEdge: (src_id: FROM_ID, dst_id: TO_ID) => boolean;
     readonly delEdge: (src_id: FROM_ID, dst_id: TO_ID) => boolean;
     readonly newId: () => ID;
     readonly getId: (id: ID) => Signal<any> | undefined;
     readonly setId: (id: ID, signal: Signal<any>) => void;
     readonly delId: (id: ID) => boolean;
     readonly runId: (id: ID) => boolean;
+    readonly swapId: (id1: ID, id2: ID) => void;
+    readonly clearCache: () => void;
     readonly addClass: <SIGNAL_CLASS extends SignalClass>(factory_fn: (ctx: Context) => SIGNAL_CLASS) => SIGNAL_CLASS["create"];
     readonly getClass: <SIGNAL_CLASS extends SignalClass>(factory_fn: (ctx: Context) => SIGNAL_CLASS) => SIGNAL_CLASS;
     readonly batch: Context_Batch;

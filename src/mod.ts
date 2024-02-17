@@ -1,4 +1,5 @@
-/** a equal-calorie clone of the popular reactivity library [SolidJS](https://github.com/solidjs/solid). <br>
+/** a low-calorie clone of the popular reactivity library [SolidJS](https://github.com/solidjs/solid). <br>
+ * but it handles signals in dependency-topological-order, and is much faster, and less ambiguous in terms of reactivity behavior.
  * @module
 */
 
@@ -11,3 +12,4 @@ export { RecordMemoSignal_Factory, RecordSignal_Factory, RecordStateSignal_Facto
 export type * from "./signal.js"
 export { EffectSignal_Factory, LazySignal_Factory, MemoSignal_Factory, SimpleSignal_Factory, StateSignal_Factory } from "./signal.js"
 export type * from "./typedefs.js"
+

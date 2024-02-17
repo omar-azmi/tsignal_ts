@@ -2,7 +2,7 @@
  * @module
 */
 import { DEBUG, bindMethodToSelfByName } from "./deps.js";
-import { default_equality, falsey_equality, log_get_request } from "./funcdefs.js";
+import { log_get_request, parseEquality } from "./funcdefs.js";
 import { SignalUpdateStatus } from "./typedefs.js";
 export const SimpleSignal_Factory = (ctx) => {
     const { newId, getId, setId, addEdge } = ctx;
@@ -15,7 +15,7 @@ export const SimpleSignal_Factory = (ctx) => {
             this.rid = id;
             this.name = name;
             this.value = value;
-            this.equals = equals === false ? falsey_equality : (equals ?? default_equality);
+            this.equals = parseEquality(equals);
         }
         get(observer_id) {
             if (observer_id) {
@@ -145,10 +145,16 @@ export const EffectSignal_Factory = (ctx) => {
         }
         /** a non-untracked observer (which is what all new observers are) depending on an effect signal will result in the triggering of effect function.
          * this is an intentional design choice so that effects can be scaffolded on top of other effects.
+         * TODO: reconsider, because you can also check for `this.rid !== 0` to determine that `this.fn` effect function has never run before, thus it must run at least once if the observer is not untracked_id
+         * is it really necessary for us to rerun `this.fn` effect function for every new observer? it seems to create chaos rather than reducing it.
+         * UPDATE: decided NOT to re-run on every new observer
+         * TODO: cleanup this messy doc and redeclare how createEffect works
         */
         get(observer_id) {
             if (observer_id) {
-                this.run();
+                if (this.rid) {
+                    this.run();
+                }
                 super.get(observer_id);
             }
         }

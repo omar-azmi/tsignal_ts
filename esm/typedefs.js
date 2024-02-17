@@ -1,11 +1,11 @@
 /** base type definitions <br>
  * @module
 */
-/** the numbers used for relaying the status of a signal after it has been _ran_ via its {@link Signal.run} method. <br>
+/** the numbers used for relaying the status of a signal after it has been _ran_ via its {@link Signal.run | `run method`}. <br>
  * these numbers convey the following instructions to the context's topological update cycle {@link context!Context.propagateSignalUpdate}:
  * - ` 1`: this signal's value has been updated, and therefore its observers should be updated too.
  * - ` 0`: this signal's value has not changed, and therefore its observers should be _not_ be updated.
- *   do note that an observer signal will still run if some _other_ of its dependency signal did updat this cycle (i.e. had a status value of `1`)
+ *   do note that an observer signal will still run if some _other_ of its dependency signal did update this cycle (i.e. had a status value of `1`)
  * - `-1`: this signal has been aborted, and therefore its observers must abort execution as well.
  *   the observers will abort _even_ if they had a dependency that _did_ update (had a status value of `1`)
  *

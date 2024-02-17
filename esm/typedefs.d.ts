@@ -92,7 +92,7 @@ export interface Signal<T> {
      * }
      * ```
     */
-    set(...args: any[]): boolean;
+    set?(...args: any[]): boolean;
     /** specify actions that need to be taken __before__ an update cycle has even begun propagating. <br>
      * TODO: CURRENTLY NOT IMPLEMENTED.
      * ISSUE: what should the order in which prepruns run be? we do know the FULL set of signal ids that will be visited.
@@ -115,14 +115,14 @@ export interface Signal<T> {
     */
     run(forced?: boolean): SignalUpdateStatus;
     /** specify actions that need to be taken __after__ an update cycle has fully propagated till the end. <br>
-     * the order in which `postrun`s will be execuded will be in the reverse order in which they were first encountered (i.e: last in, last out).
-     * meaning that if all three singals `A`, `B`, and `C`, had `postrun` methods on them, and the order of execution was:
+     * the order in which `postrun`s will be executed will be in the reverse order in which they were first encountered (i.e: last in, last out).
+     * meaning that if all three signals `A`, `B`, and `C`, had `postrun` methods on them, and the order of execution was:
      * `A -> B -> C`, then all `postrun`s will run in the order: `[C.postrun, B.postrun, A.postrun]` (similar to a stack popping).
     */
     postrun?(): void;
     /** a utility method defined in {@link signal!SimpleSignal}, which allows one to bind a certain method (by name) to _this_ instance of a signal,
      * and therefore make that method freeable/seperable from _this_ signal. <br>
-     * this method is used by all signal classes's static {@link SignalClass.create} mehod, which is supposed to construct a signal in
+     * this method is used by all signal classes's static {@link SignalClass.create} method, which is supposed to construct a signal in
      * a fashion similar to SolidJS, and return an array containing important control functions of the created signal.
      * most, if not all, of these control function are generally plain old signal methods that have been bounded to the created signal instance.
     */
@@ -133,11 +133,11 @@ export interface SignalClass {
     new (...args: any[]): Signal<any>;
     create(...args: any[]): [id: ID, ...any[]];
 }
-/** the numbers used for relaying the status of a signal after it has been _ran_ via its {@link Signal.run} method. <br>
+/** the numbers used for relaying the status of a signal after it has been _ran_ via its {@link Signal.run | `run method`}. <br>
  * these numbers convey the following instructions to the context's topological update cycle {@link context!Context.propagateSignalUpdate}:
  * - ` 1`: this signal's value has been updated, and therefore its observers should be updated too.
  * - ` 0`: this signal's value has not changed, and therefore its observers should be _not_ be updated.
- *   do note that an observer signal will still run if some _other_ of its dependency signal did updat this cycle (i.e. had a status value of `1`)
+ *   do note that an observer signal will still run if some _other_ of its dependency signal did update this cycle (i.e. had a status value of `1`)
  * - `-1`: this signal has been aborted, and therefore its observers must abort execution as well.
  *   the observers will abort _even_ if they had a dependency that _did_ update (had a status value of `1`)
  *

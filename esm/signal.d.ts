@@ -4,9 +4,9 @@
 import { Context } from "./context.js";
 import { Accessor, EqualityCheck, EqualityFn, ID, Setter, SignalUpdateStatus, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.js";
 export interface SimpleSignalConfig<T> {
-    /** give a name to the signal for debuging purposes */
+    /** give a name to the signal for debugging purposes */
     name?: string;
-    /** when a signal's value is updated (either through a {@link Setter}, or a change in the value of a dependancy signal in the case of a memo),
+    /** when a signal's value is updated (either through a {@link Setter}, or a change in the value of a dependency signal in the case of a memo),
      * then the dependants/observers of THIS signal will only be notified if the equality check function evaluates to a `false`. <br>
      * see {@link EqualityCheck} to see its function signature and default behavior when left `undefined`
     */
@@ -116,6 +116,10 @@ export declare const EffectSignal_Factory: (ctx: Context) => {
         postrun: never;
         /** a non-untracked observer (which is what all new observers are) depending on an effect signal will result in the triggering of effect function.
          * this is an intentional design choice so that effects can be scaffolded on top of other effects.
+         * TODO: reconsider, because you can also check for `this.rid !== 0` to determine that `this.fn` effect function has never run before, thus it must run at least once if the observer is not untracked_id
+         * is it really necessary for us to rerun `this.fn` effect function for every new observer? it seems to create chaos rather than reducing it.
+         * UPDATE: decided NOT to re-run on every new observer
+         * TODO: cleanup this messy doc and redeclare how createEffect works
         */
         get(observer_id?: TO_ID | UNTRACKED_ID): void;
         set(): boolean;

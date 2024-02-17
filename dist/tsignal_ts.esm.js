@@ -22,7 +22,7 @@ var promise_reject = /* @__PURE__ */ Promise.reject.bind(Promise);
 var promise_forever = () => new Promise(noop);
 var { from: array_from, isArray: array_isArray, of: array_of } = Array;
 var { isInteger: number_isInteger, MAX_VALUE: number_MAX_VALUE, NEGATIVE_INFINITY: number_NEGATIVE_INFINITY, POSITIVE_INFINITY: number_POSITIVE_INFINITY } = Number;
-var { assign: object_assign, defineProperty: object_defineProperty, keys: object_keys, getPrototypeOf: object_getPrototypeOf, values: object_values } = Object;
+var { assign: object_assign, defineProperty: object_defineProperty, entries: object_entries, fromEntries: object_fromEntries, keys: object_keys, getPrototypeOf: object_getPrototypeOf, values: object_values } = Object;
 var date_now = Date.now;
 var { iterator: symbol_iterator, toStringTag: symbol_toStringTag } = Symbol;
 
@@ -50,6 +50,7 @@ var bind_set_clear = /* @__PURE__ */ bindMethodFactoryByName(set_proto, "clear")
 var bind_set_delete = /* @__PURE__ */ bindMethodFactoryByName(set_proto, "delete");
 var bind_set_has = /* @__PURE__ */ bindMethodFactoryByName(set_proto, "has");
 var bind_map_clear = /* @__PURE__ */ bindMethodFactoryByName(map_proto, "clear");
+var bind_map_delete = /* @__PURE__ */ bindMethodFactoryByName(map_proto, "delete");
 var bind_map_get = /* @__PURE__ */ bindMethodFactoryByName(map_proto, "get");
 var bind_map_set = /* @__PURE__ */ bindMethodFactoryByName(map_proto, "set");
 
@@ -240,8 +241,9 @@ var throttle = (delta_time_ms, fn) => {
 // src/funcdefs.ts
 var default_equality = (v1, v2) => v1 === v2;
 var falsey_equality = (v1, v2) => false;
+var parseEquality = (equals) => equals === false ? falsey_equality : equals ?? default_equality;
 var throttlingEquals = (delta_time_ms, base_equals) => {
-  const base_equals_fn = base_equals === false ? falsey_equality : base_equals ?? default_equality, throttled_equals = throttle(delta_time_ms, base_equals_fn);
+  const base_equals_fn = parseEquality(base_equals), throttled_equals = throttle(delta_time_ms, base_equals_fn);
   return (prev_value, new_value) => {
     const is_equal = throttled_equals(prev_value, new_value);
     return is_equal === THROTTLE_REJECT ? true : is_equal;
@@ -278,7 +280,7 @@ var SimpleSignal_Factory = (ctx) => {
       this.rid = id;
       this.name = name;
       this.value = value;
-      this.equals = equals === false ? falsey_equality : equals ?? default_equality;
+      this.equals = parseEquality(equals);
     }
     get(observer_id) {
       if (observer_id) {
@@ -400,10 +402,16 @@ var EffectSignal_Factory = (ctx) => {
     }
     /** a non-untracked observer (which is what all new observers are) depending on an effect signal will result in the triggering of effect function.
      * this is an intentional design choice so that effects can be scaffolded on top of other effects.
+     * TODO: reconsider, because you can also check for `this.rid !== 0` to determine that `this.fn` effect function has never run before, thus it must run at least once if the observer is not untracked_id
+     * is it really necessary for us to rerun `this.fn` effect function for every new observer? it seems to create chaos rather than reducing it.
+     * UPDATE: decided NOT to re-run on every new observer
+     * TODO: cleanup this messy doc and redeclare how createEffect works
     */
     get(observer_id) {
       if (observer_id) {
-        this.run();
+        if (this.rid) {
+          this.run();
+        }
         super.get(observer_id);
       }
     }
@@ -489,34 +497,66 @@ var Context = class {
   setId;
   delId;
   runId;
+  swapId;
+  clearCache;
   addClass;
   getClass;
   batch;
   dynamic;
   constructor() {
     let id_counter = 0, batch_nestedness = 0;
-    const fmap = /* @__PURE__ */ new Map(), rmap = /* @__PURE__ */ new Map(), fmap_get = bind_map_get(fmap), rmap_get = bind_map_get(rmap), fmap_set = bind_map_set(fmap), rmap_set = bind_map_set(rmap);
-    const ids_to_visit_cache = /* @__PURE__ */ new Map(), ids_to_visit_cache_get = bind_map_get(ids_to_visit_cache), ids_to_visit_cache_set = bind_map_set(ids_to_visit_cache), ids_to_visit_cache_clear = bind_map_clear(ids_to_visit_cache), ids_to_visit_cache_create_new_entry = (source_ids) => {
+    const fmap = /* @__PURE__ */ new Map(), rmap = /* @__PURE__ */ new Map(), fmap_get = bind_map_get(fmap), rmap_get = bind_map_get(rmap), fmap_set = bind_map_set(fmap), rmap_set = bind_map_set(rmap), fmap_delete = bind_map_delete(fmap), rmap_delete = bind_map_delete(rmap);
+    const ids_to_visit_cache = /* @__PURE__ */ new Map(), ids_to_visit_cache_get = bind_map_get(ids_to_visit_cache), ids_to_visit_cache_set = bind_map_set(ids_to_visit_cache), ids_to_visit_cache_clear = bind_map_clear(ids_to_visit_cache);
+    const ids_to_visit_cache_create_new_entry = (source_ids) => {
       const to_visit = /* @__PURE__ */ new Set(), to_visit_add = bind_set_add(to_visit), to_visit_has = bind_set_has(to_visit);
-      const dfs_visiter = (id) => {
+      const dfs_visitor = (id) => {
         if (!to_visit_has(id)) {
+          fmap_get(id)?.forEach(dfs_visitor);
           to_visit_add(id);
-          fmap_get(id)?.forEach(dfs_visiter);
         }
       };
-      source_ids.forEach(dfs_visiter);
-      return to_visit;
-    }, get_ids_to_visit = (...source_ids) => {
+      source_ids.forEach(dfs_visitor);
+      source_ids.forEach(bind_set_delete(to_visit));
+      return [...to_visit, ...source_ids].reverse();
+    };
+    const get_ids_to_visit = (...source_ids) => {
       const hash = hash_ids(source_ids);
       return ids_to_visit_cache_get(hash) ?? (ids_to_visit_cache_set(hash, ids_to_visit_cache_create_new_entry(source_ids)) && ids_to_visit_cache_get(hash));
     };
-    const all_signals = /* @__PURE__ */ new Map(), all_signals_get = bind_map_get(all_signals), all_signals_set = bind_map_set(all_signals);
-    const to_visit_this_cycle = /* @__PURE__ */ new Set(), to_visit_this_cycle_add = bind_set_add(to_visit_this_cycle), to_visit_this_cycle_delete = bind_set_delete(to_visit_this_cycle), to_visit_this_cycle_clear = bind_set_clear(to_visit_this_cycle), updated_this_cycle = /* @__PURE__ */ new Map(), updated_this_cycle_get = bind_map_get(updated_this_cycle), updated_this_cycle_set = bind_map_set(updated_this_cycle), updated_this_cycle_clear = bind_map_clear(updated_this_cycle), postruns_this_cycle = [], postruns_this_cycle_push = bind_array_push(postruns_this_cycle), postruns_this_cycle_clear = bind_array_pop(postruns_this_cycle), batched_ids = [], batched_ids_push = bind_array_push(batched_ids), batched_ids_clear = bind_array_clear(batched_ids), fireUpdateCycle = (...source_ids) => {
-      to_visit_this_cycle_clear();
-      updated_this_cycle_clear();
-      get_ids_to_visit(...source_ids).forEach(to_visit_this_cycle_add);
-      for (const source_id of source_ids) {
-        propagateSignalUpdate(source_id, true);
+    const all_signals = /* @__PURE__ */ new Map(), all_signals_get = bind_map_get(all_signals), all_signals_set = bind_map_set(all_signals), all_signals_delete = bind_map_delete(all_signals);
+    const next_to_visit_this_cycle = /* @__PURE__ */ new Set(), next_to_visit_this_cycle_add = bind_set_add(next_to_visit_this_cycle), next_to_visit_this_cycle_delete = bind_set_delete(next_to_visit_this_cycle), next_to_visit_this_cycle_clear = bind_set_clear(next_to_visit_this_cycle);
+    const not_to_visit_this_cycle = /* @__PURE__ */ new Set(), not_to_visit_this_cycle_add = bind_set_add(not_to_visit_this_cycle), not_to_visit_this_cycle_has = bind_set_has(not_to_visit_this_cycle), not_to_visit_this_cycle_clear = bind_set_clear(not_to_visit_this_cycle);
+    const status_this_cycle = /* @__PURE__ */ new Map(), status_this_cycle_set = /* @__PURE__ */ bind_map_set(status_this_cycle), status_this_cycle_clear = /* @__PURE__ */ bind_map_clear(status_this_cycle);
+    const postruns_this_cycle = [], postruns_this_cycle_push = bind_array_push(postruns_this_cycle), postruns_this_cycle_clear = bind_array_pop(postruns_this_cycle);
+    const fireUpdateCycle = (...source_ids) => {
+      next_to_visit_this_cycle_clear();
+      not_to_visit_this_cycle_clear();
+      if (0 /* LOG */) {
+        /* @__PURE__ */ status_this_cycle_clear();
+      }
+      source_ids.forEach(next_to_visit_this_cycle_add);
+      let number_of_forced_ids = source_ids.length;
+      const topological_ids = get_ids_to_visit(...source_ids);
+      for (const source_id of topological_ids) {
+        if (next_to_visit_this_cycle_delete(source_id) && !not_to_visit_this_cycle_has(source_id)) {
+          const signal_update_status = executeSignal(source_id, number_of_forced_ids-- > 0);
+          if (signal_update_status !== 0 /* UNCHANGED */) {
+            fmap_get(source_id)?.forEach(
+              signal_update_status >= 1 /* UPDATED */ ? next_to_visit_this_cycle_add : not_to_visit_this_cycle_add
+            );
+          }
+          if (0 /* LOG */) {
+            status_this_cycle_set(source_id, signal_update_status);
+          }
+        }
+        if (next_to_visit_this_cycle.size <= 0) {
+          break;
+        }
+      }
+      if (0 /* LOG */) {
+        console.log("topological visiting ordering: ", [...status_this_cycle].map(([id, status]) => {
+          return [all_signals_get(id).name, status];
+        }));
       }
       if (0 /* LOG */) {
         console.log("UPDATE_POSTRUNS:	", postruns_this_cycle);
@@ -525,63 +565,93 @@ var Context = class {
       while (postrun_id = postruns_this_cycle_clear()) {
         all_signals_get(postrun_id)?.postrun();
       }
-    }, startBatching = () => ++batch_nestedness, endBatching = () => {
+    };
+    const executeSignal = (id, force) => {
+      const forced = force === true, this_signal = all_signals_get(id), this_signal_update_status = this_signal?.run(forced) ?? 0 /* UNCHANGED */;
+      if (this_signal_update_status >= 1 /* UPDATED */ && this_signal.postrun) {
+        postruns_this_cycle_push(id);
+      }
+      return this_signal_update_status;
+    };
+    const batched_ids = [], batched_ids_push = bind_array_push(batched_ids), batched_ids_clear = bind_array_clear(batched_ids);
+    const startBatching = () => ++batch_nestedness;
+    const endBatching = () => {
       if (--batch_nestedness <= 0) {
         batch_nestedness = 0;
         fireUpdateCycle(...batched_ids_clear());
       }
-    }, scopedBatching = (fn, ...args) => {
+    };
+    const scopedBatching = (fn, ...args) => {
       startBatching();
       const return_value = fn(...args);
       endBatching();
       return return_value;
     };
-    const propagateSignalUpdate = (id, force) => {
-      if (to_visit_this_cycle_delete(id)) {
-        const forced = force === true, this_signal = all_signals_get(id);
-        if (0 /* LOG */) {
-          console.log("UPDATE_CYCLE	", "visiting   :	", this_signal?.name);
-        }
-        let any_updated_dependency = forced ? 1 /* UPDATED */ : 0 /* UNCHANGED */;
-        if (any_updated_dependency <= 0 /* UNCHANGED */) {
-          for (const dependency_id of rmap_get(id) ?? []) {
-            propagateSignalUpdate(dependency_id);
-            any_updated_dependency |= updated_this_cycle_get(dependency_id) ?? 0 /* UNCHANGED */;
-          }
-        }
-        let this_signal_update_status = any_updated_dependency;
-        if (this_signal_update_status >= 1 /* UPDATED */) {
-          this_signal_update_status = this_signal?.run(forced) ?? 0 /* UNCHANGED */;
-        }
-        updated_this_cycle_set(id, this_signal_update_status);
-        if (0 /* LOG */) {
-          console.log("UPDATE_CYCLE	", this_signal_update_status > 0 ? "propagating:	" : this_signal_update_status < 0 ? "delaying    	" : "blocking   :	", this_signal?.name);
-        }
-        if (this_signal_update_status >= 1 /* UPDATED */) {
-          if (this_signal.postrun) {
-            postruns_this_cycle_push(id);
-          }
-          fmap_get(id)?.forEach(propagateSignalUpdate);
-        }
-      }
-    };
     this.addEdge = (src_id, dst_id) => {
+      if (src_id + dst_id <= 0) {
+        return false;
+      }
       const forward_items = fmap_get(src_id) ?? (fmap_set(src_id, /* @__PURE__ */ new Set()) && fmap_get(src_id));
       if (!forward_items.has(dst_id)) {
         forward_items.add(dst_id);
         if (!rmap_get(dst_id)?.add(src_id)) {
           rmap_set(dst_id, /* @__PURE__ */ new Set([src_id]));
         }
+        ids_to_visit_cache_clear();
+        return true;
       }
+      return false;
     };
-    this.delEdge = void 0;
+    this.delEdge = (src_id, dst_id) => {
+      if (fmap_get(src_id)?.delete(dst_id) && rmap_get(dst_id)?.delete(src_id)) {
+        ids_to_visit_cache_clear();
+        return true;
+      }
+      return false;
+    };
     this.newId = () => {
       ids_to_visit_cache_clear();
       return ++id_counter;
     };
     this.getId = all_signals_get;
     this.setId = all_signals_set;
-    this.delId = void 0;
+    this.delId = (id) => {
+      if (all_signals_delete(id)) {
+        const forward_items = fmap_get(id), reverse_items = rmap_get(id);
+        forward_items?.forEach((dst_id) => {
+          rmap_get(dst_id)?.delete(id);
+        });
+        reverse_items?.forEach((src_id) => {
+          fmap_get(src_id)?.delete(id);
+        });
+        forward_items?.clear();
+        reverse_items?.clear();
+        fmap_delete(id);
+        rmap_delete(id);
+        ids_to_visit_cache_clear();
+        return true;
+      }
+      return false;
+    };
+    this.swapId = (id1, id2) => {
+      const signal1 = all_signals_get(id1), signal2 = all_signals_get(id2);
+      all_signals_set(id1, signal2);
+      all_signals_set(id2, signal1);
+      if (signal1) {
+        signal1.id = id2;
+        if (signal1.rid) {
+          signal1.rid = id2;
+        }
+      }
+      if (signal2) {
+        signal2.id = id1;
+        if (signal2.rid) {
+          signal2.rid = id1;
+        }
+      }
+      ids_to_visit_cache_clear();
+    };
+    this.clearCache = ids_to_visit_cache_clear;
     this.runId = (id) => {
       const will_fire_immediately = batch_nestedness <= 0;
       if (will_fire_immediately) {
