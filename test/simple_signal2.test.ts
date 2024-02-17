@@ -35,6 +35,7 @@ Deno.test("test1", () => {
 })
 
 Deno.test("test2", () => {
+	// @ts-ignore: enums can't be modified, but we want to control our logging here
 	DEBUG.LOG = 1
 	setA(2)
 })

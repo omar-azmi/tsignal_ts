@@ -22,3 +22,6 @@ export const enum DEBUG {
 }
 
 export const object_entries = Object.entries
+
+// TODO: add multiple logging options: such as one for `Signal.get` logging, and one for `Context.updateFireCycle`, etc...
+// TODO: add a link to license in `readme.md`
