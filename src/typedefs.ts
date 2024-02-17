@@ -157,7 +157,7 @@ export interface SignalClass {
 	create(...args: any[]): [id: ID, ...any[]]
 }
 
-/** the numbers used for relaying the status of a signal after it has been _ran_ via its {@link Signal.run} method. <br>
+/** the numbers used for relaying the status of a signal after it has been _ran_ via its {@link Signal.run | `run method`}. <br>
  * these numbers convey the following instructions to the context's topological update cycle {@link context!Context.propagateSignalUpdate}:
  * - ` 1`: this signal's value has been updated, and therefore its observers should be updated too.
  * - ` 0`: this signal's value has not changed, and therefore its observers should be _not_ be updated.
