@@ -119,7 +119,7 @@ export const LazySignal_Factory = (ctx) => {
         get(observer_id) {
             if (this.rid || this.dirty) {
                 super.set(this.fn(this.rid));
-                this.dirty = 1;
+                this.dirty = 0;
                 this.rid = 0;
             }
             return super.get(observer_id);

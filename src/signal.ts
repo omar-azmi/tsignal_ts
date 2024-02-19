@@ -207,7 +207,7 @@ export const LazySignal_Factory = (ctx: Context) => {
 		get(observer_id?: TO_ID | UNTRACKED_ID): T {
 			if (this.rid || this.dirty) {
 				super.set(this.fn(this.rid))
-				this.dirty = 1
+				this.dirty = 0
 				this.rid = 0 as UNTRACKED_ID
 			}
 			return super.get(observer_id)

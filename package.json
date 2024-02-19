@@ -1,10 +1,10 @@
 {
   "module": "./esm/mod.js",
   "name": "tsignal_ts",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "a topological order respecting signals library inspired by SolidJS",
   "author": "Omar Azmi",
-  "license": "Lulz plz don't steal yet",
+  "license": "Anti-Competition License",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/omar-azmi/tsignal_ts.git"
