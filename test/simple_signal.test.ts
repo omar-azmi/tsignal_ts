@@ -47,7 +47,7 @@ Deno.test("test uncached performance", () => {
 	// @ts-ignore: don't want our performance test impacted by console logging
 	DEBUG.LOG = 0
 	// twice as slow as cached's performance
-	const clear_dfs_cache = ctx.newId
+	const clear_dfs_cache = ctx.clearCache
 	let start = performance.now()
 	for (let A_value = 0; A_value < 100_000; A_value++) {
 		clear_dfs_cache()

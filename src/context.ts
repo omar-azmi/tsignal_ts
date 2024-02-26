@@ -31,6 +31,8 @@ export class Context {
 	readonly delId: (id: ID) => boolean
 	readonly runId: (id: ID) => boolean
 	readonly swapId: (id1: ID, id2: ID) => void
+	readonly onInit: <T>(id: ID, initialization_func: () => T) => T | undefined
+	readonly onDelete: (id: ID, cleanup_func: () => void) => void
 	readonly clearCache: () => void
 	readonly addClass: <SIGNAL_CLASS extends SignalClass>(factory_fn: (ctx: Context) => SIGNAL_CLASS) => SIGNAL_CLASS["create"]
 	readonly getClass: <SIGNAL_CLASS extends SignalClass>(factory_fn: (ctx: Context) => SIGNAL_CLASS) => SIGNAL_CLASS
@@ -226,6 +228,24 @@ export class Context {
 			return return_value
 		}
 
+		const
+			// TODO if you're in favor: on_init_memorization_map
+			on_delete_func_map = new Map<ID, () => void>,
+			on_delete_func_map_get = bind_map_get(on_delete_func_map),
+			on_delete_func_map_set = bind_map_set(on_delete_func_map),
+			on_delete_func_map_delete = bind_map_delete(on_delete_func_map)
+
+		// TODO: debate whether or not should the `onInit` function memorize the `init_func`'s return value, and then always return the same memorized value in consecutive runs
+		this.onInit = <T>(id: ID, init_func: () => T): (T | undefined) => {
+			// whenever the `id` is non-zero, we will run the initialization function.
+			// the runtime `id` is only non-zero in the very first run/invocation of that signal's memo/recomputation function.
+			return id ? init_func() : undefined
+		}
+		this.onDelete = (id: ID, cleanup_func: () => void): void => {
+			// only save the `cleanup_func` on the signal's first run, when `id` is non-zero
+			if (id) { on_delete_func_map_set(id, cleanup_func) }
+		}
+
 		this.addEdge = (src_id: FROM_ID, dst_id: TO_ID): boolean => {
 			if (src_id + dst_id <= (0 as UNTRACKED_ID)) { return false }
 			const forward_items = fmap_get(src_id) ?? (
@@ -276,6 +296,9 @@ export class Context {
 				rmap_delete(id)
 				// the visit cache must be cleared so that the updated dependency tree can be rebuilt
 				ids_to_visit_cache_clear()
+				// call the `onDelete` function associated with the deleted `id`
+				on_delete_func_map_get(id)?.()
+				on_delete_func_map_delete(id)
 				return true
 			}
 			return false
