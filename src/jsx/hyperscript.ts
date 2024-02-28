@@ -71,6 +71,9 @@ export interface HyperScript_CreateElement {
 	<P = {}>(component: ComponentGenerator<P>, props?: P | null, ...children: ElementChildren): ReturnType<typeof component>
 }
 
+const specialTagNameSpaces = {
+	"svg": "http://www.w3.org/2000/svg"
+}
 
 // TODO: think of how to make `createHyperScript` extendable via add-on style plugins.
 // for example, it would become possible for you to declare that `ctx.addClass(DOMTextNodeSignal_Factory)` should be used for creating reactive text nodes,
@@ -81,13 +84,18 @@ export interface HyperScript_CreateElement {
 // essentially, being able to `ctx.runId(the_signal_id)`
 
 /** create hyperscript functions to create elements and fragments during runtime after your JSX or TSX have been transformed. */
-export const createHyperScript = (ctx: Context): [createElement: HyperScript_CreateElement, createFragment: HyperScript_CreateFragment] => {
+export const createHyperScript = (ctx: Context) => {
 	const
 		createText = ctx.addClass(DOMTextNodeSignal_Factory),
 		createAttr = ctx.addClass(DOMAttrSignal_Factory)
 
+	let current_namespace_tag: (undefined | keyof typeof specialTagNameSpaces) = undefined
+
 	const createElement = (component: undefined | string | ComponentGenerator, props?: ElementAttrs | null, ...children: ElementChild[]): Element | Element[] => {
 		props ??= {}
+		if (current_namespace_tag !== undefined) {
+			return createElementNS(component as keyof typeof specialTagNameSpaces, props, ...children)
+		}
 		const
 			child_nodes = children.flatMap((child) => child instanceof Node
 				? child
@@ -117,7 +125,33 @@ export const createHyperScript = (ctx: Context): [createElement: HyperScript_Cre
 		return component_node as HTMLElement
 	}
 
-	const createFragment = createElement.bind(undefined, undefined)
+	const createElementNS = (component: string, props?: ElementAttrs | null, ...children: ElementChild[]): Element | Element[] => {
+		props ??= {}
+		const
+			elem_namespace = specialTagNameSpaces[current_namespace_tag!],
+			component_node = document.createElementNS(elem_namespace, component),
+			child_nodes = children.flatMap((child) => child instanceof Node
+				? child
+				: createText(child)[2]
+			)
+		// assign the props as reactive attributes of the new element node
+		for (const [attr_name, attr_value] of object_entries(props)) {
+			// svg doesn't work when their attributes are made with a namespaceURI (i.e. createAttributeNS doesn't work for svgs). strange.
+			// const attr = document.createAttributeNS(elem_namespace, attr_name)
+			component_node.setAttributeNode(createAttr(attr_name, attr_value)[2])
+		}
+		component_node.append(...child_nodes)
+		return component_node
+	}
 
-	return [createElement as HyperScript_CreateElement, createFragment as HyperScript_CreateFragment]
+	const createFragment = createElement.bind(undefined, undefined)
+	const changeNameSpace = (tag_name?: typeof current_namespace_tag) => {
+		current_namespace_tag = tag_name
+	}
+
+	return [
+		createElement as HyperScript_CreateElement,
+		createFragment as HyperScript_CreateFragment,
+		changeNameSpace
+	] as const
 }
