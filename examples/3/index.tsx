@@ -10,7 +10,7 @@ const
 	createMemo = ctx.addClass(MemoSignal_Factory)
 
 /** in the esbuild build options (`BuildOptions`), you must set `jsxFactory = "h"` and `jsxFragment = "hf"` */
-export const [h, hf, changeNS] = createHyperScript(ctx)
+export const [h, hf, namespaceStack] = createHyperScript(ctx)
 
 type TimeState = {
 	hour: number
@@ -39,7 +39,7 @@ const App = () => {
 	setInterval(() => setEpochTime(Date.now()), 500)
 
 	// we must change the namespace to `svg`, so that hypescript picks up on it, and handles the newly created svg nodes appropriately.
-	changeNS("svg")
+	namespaceStack.push("svg")
 	const svg_dom = <svg width="200px" height="200px" viewBox="0 0 200 200">
 		<g transform="translate(100, 100)">
 			<circle r="100" fill="lightgrey" stroke="black" />
@@ -49,7 +49,7 @@ const App = () => {
 		</g>
 	</svg>
 	// declare that the svg namespace is now over, and switch back to html namespace
-	changeNS()
+	namespaceStack.pop()
 	return svg_dom
 }
 

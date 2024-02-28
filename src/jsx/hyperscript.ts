@@ -14,7 +14,7 @@
  * import { Context } from "./path/to/tsignal_ts/mod.ts"
  * 
  * const ctx = new Context()
- * const [h, hf] = createHyperScript(ctx)
+ * const [h, hf, namespaceStack] = createHyperScript(ctx)
  * 
  * const my_elem = <div>Hello world</div>
  * const my_fragment_elems = <>
@@ -43,7 +43,7 @@
 */
 
 import { Context } from "../context.ts"
-import { Stringifyable, array_isArray, isFunction, object_entries } from "../deps.ts"
+import { Stringifyable, array_isArray, bind_array_pop, bind_array_push, bind_stack_seek, isFunction, object_entries } from "../deps.ts"
 import { DOMAttrSignal_Factory, DOMTextNodeSignal_Factory } from "../dom_signal.ts"
 import { Accessor } from "../typedefs.ts"
 
@@ -73,7 +73,9 @@ export interface HyperScript_CreateElement {
 
 const specialTagNameSpaces = {
 	"svg": "http://www.w3.org/2000/svg"
-}
+} as const
+
+type NameSpaceURI = typeof specialTagNameSpaces
 
 // TODO: think of how to make `createHyperScript` extendable via add-on style plugins.
 // for example, it would become possible for you to declare that `ctx.addClass(DOMTextNodeSignal_Factory)` should be used for creating reactive text nodes,
@@ -89,12 +91,17 @@ export const createHyperScript = (ctx: Context) => {
 		createText = ctx.addClass(DOMTextNodeSignal_Factory),
 		createAttr = ctx.addClass(DOMAttrSignal_Factory)
 
-	let current_namespace_tag: (undefined | keyof typeof specialTagNameSpaces) = undefined
+	const
+		namespace_stack: (keyof NameSpaceURI)[] = [],
+		namespace_stack_push = bind_array_push(namespace_stack),
+		namespace_stack_pop = bind_array_pop(namespace_stack),
+		namespace_stack_seek = bind_stack_seek(namespace_stack)
 
 	const createElement = (component: undefined | string | ComponentGenerator, props?: ElementAttrs | null, ...children: ElementChild[]): Element | Element[] => {
 		props ??= {}
-		if (current_namespace_tag !== undefined) {
-			return createElementNS(component as keyof typeof specialTagNameSpaces, props, ...children)
+		const current_namespace_tag = namespace_stack_seek()
+		if (current_namespace_tag) {
+			return createElementNS(specialTagNameSpaces[current_namespace_tag], component as string, props, ...children)
 		}
 		const
 			child_nodes = children.flatMap((child) => child instanceof Node
@@ -125,11 +132,10 @@ export const createHyperScript = (ctx: Context) => {
 		return component_node as HTMLElement
 	}
 
-	const createElementNS = (component: string, props?: ElementAttrs | null, ...children: ElementChild[]): Element | Element[] => {
+	const createElementNS = (namespace_uri: NameSpaceURI[keyof NameSpaceURI], component: string, props?: ElementAttrs | null, ...children: ElementChild[]): Element | Element[] => {
 		props ??= {}
 		const
-			elem_namespace = specialTagNameSpaces[current_namespace_tag!],
-			component_node = document.createElementNS(elem_namespace, component),
+			component_node = document.createElementNS(namespace_uri, component),
 			child_nodes = children.flatMap((child) => child instanceof Node
 				? child
 				: createText(child)[2]
@@ -137,21 +143,24 @@ export const createHyperScript = (ctx: Context) => {
 		// assign the props as reactive attributes of the new element node
 		for (const [attr_name, attr_value] of object_entries(props)) {
 			// svg doesn't work when their attributes are made with a namespaceURI (i.e. createAttributeNS doesn't work for svgs). strange.
-			// const attr = document.createAttributeNS(elem_namespace, attr_name)
+			// const attr = document.createAttributeNS(namespace_uri, attr_name)
 			component_node.setAttributeNode(createAttr(attr_name, attr_value)[2])
 		}
 		component_node.append(...child_nodes)
 		return component_node
 	}
 
-	const createFragment = createElement.bind(undefined, undefined)
-	const changeNameSpace = (tag_name?: typeof current_namespace_tag) => {
-		current_namespace_tag = tag_name
+	const namespaceStack = {
+		push: namespace_stack_push,
+		pop: namespace_stack_pop,
+		seek: namespace_stack_seek,
 	}
+
+	const createFragment = createElement.bind(undefined, undefined)
 
 	return [
 		createElement as HyperScript_CreateElement,
 		createFragment as HyperScript_CreateFragment,
-		changeNameSpace
+		namespaceStack
 	] as const
 }
