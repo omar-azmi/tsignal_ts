@@ -13,7 +13,7 @@ const
 const output_files = await doubleCompileFiles(compile_file, out_dir,
 	{
 		jsxFactory: "h",
-		jsxFragment: "Fragment",
+		jsxFragment: "hf",
 	},
 	{
 		minify: false,

@@ -1,6 +1,8 @@
+/** @jsx h */
+/** @jsxFrag hf */
+
 import { Context, MemoSignal_Factory, StateSignal_Factory } from "../../src/mod.ts"
-import { HyperScript_Signal } from "../jsx_transform4.ts"
-// (() => { h; Fragment })() // preserving the imports
+import { createHyperScript } from "../jsx_transform4.ts"
 
 const
 	ctx = new Context,
@@ -10,9 +12,8 @@ const
 	onDelete = ctx.onDelete
 
 
-/** in the esbuild build options (`BuildOptions`), you must set `jsxFactory = "h"` and `jsxFragment = "Fragment"` */
-export const h = ctx.addClass(HyperScript_Signal)
-export const Fragment = (props: object, ...elements: Node[]) => (elements)
+/** in the esbuild build options (`BuildOptions`), you must set `jsxFactory = "h"` and `jsxFragment = "hf"` */
+export const [h, hf] = createHyperScript(ctx)
 
 // TODO: implement `onDelete` cleanup
 export const MyComponents = () => {
