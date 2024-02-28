@@ -1,7 +1,7 @@
 // Set signal, Array signal, Map signal, etc... with method overloading to signal dirty when mutated
 // use a "depends-on" array of ids approach?
 
-import { ConstructorOf, bind_map_get, bind_map_set, object_entries } from "./deps.ts"
+import { ConstructorOf, bind_map_get, bind_map_set, isFunction, object_entries } from "./deps.ts"
 import { parseEquality } from "./funcdefs.ts"
 import { ID, Signal, SignalClass } from "./typedefs.ts"
 
@@ -98,7 +98,7 @@ const createProxyHandler = <T extends object>(
 			const prop = mutation_methods_map_get(key as keyof T) ?? Reflect.get(target, key)
 			console.log("get key:", key)
 			console.log("got item:", prop)
-			return typeof prop === "function" ? prop.bind(target) : prop
+			return isFunction(prop) ? prop.bind(target) : prop
 		},
 		set(target: T, key, new_value) {
 			mutation_members_map_get(key as keyof T)?.call(target,

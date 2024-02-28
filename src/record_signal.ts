@@ -3,7 +3,7 @@
 */
 
 import { Context } from "./context.ts"
-import { array_isArray, object_keys, object_values } from "./deps.ts"
+import { array_isArray, isFunction, object_keys, object_values } from "./deps.ts"
 import { SimpleSignal_Factory } from "./signal.ts"
 import { Accessor, EqualityCheck, EqualityFn, ID, SignalUpdateStatus, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.ts"
 
@@ -96,7 +96,7 @@ export const RecordSignal_Factory = (ctx: Context) => {
 					key = keys[i],
 					old_value = record[key],
 					new_value = values[i],
-					_new_value = record[key] = typeof new_value === "function" ?
+					_new_value = record[key] = isFunction(new_value) ?
 						(new_value as Updater<V>)(old_value) :
 						new_value,
 					value_has_changed = !equals(old_value, _new_value)
