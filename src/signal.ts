@@ -3,7 +3,7 @@
 */
 
 import { Context } from "./context.ts"
-import { DEBUG, StaticImplements, bindMethodToSelfByName } from "./deps.ts"
+import { DEBUG, StaticImplements, bindMethodToSelfByName, isFunction } from "./deps.ts"
 import { log_get_request, parseEquality } from "./funcdefs.ts"
 import { Accessor, EqualityCheck, EqualityFn, ID, Setter, SignalClass, SignalUpdateStatus, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.ts"
 
@@ -80,7 +80,7 @@ export const SimpleSignal_Factory = (ctx: Context) => {
 		set(new_value: T | Updater<T>): boolean {
 			const old_value = this.value
 			return !this.equals(old_value, (
-				this.value = typeof new_value === "function" ?
+				this.value = isFunction(new_value) ?
 					(new_value as Updater<T>)(old_value) :
 					new_value
 			))

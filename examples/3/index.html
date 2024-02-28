@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>example 1: seconds counter</title>
+	<!-- <script src="./index.ts" type="module"></script> -->
+	<script>
+		globalThis.addEventListener("DOMContentLoaded", async () => {
+			const { ctx, MyComponent } = await import("./index.ts")
+			// Object.assign(globalThis, { grid, app_config, signalCtx })
+			document.body.appendChild(MyComponent())
+		})
+	</script>
+
+	<style></style>
+</head>
+
+<body style="width: 100vw; height: 100vh;">
+</body>
+
+</html>

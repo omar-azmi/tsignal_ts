@@ -11,8 +11,14 @@ const
 	out_dir = "./dist/"
 
 const output_files = await doubleCompileFiles(compile_file, out_dir,
-	{},
-	{},
+	{
+		jsxFactory: "h",
+		jsxFragment: "Fragment",
+	},
+	{
+		minify: false,
+		treeShaking: true,
+	},
 )
 
 await Promise.all(output_files.map(

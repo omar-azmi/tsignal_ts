@@ -3,7 +3,7 @@
 */
 
 import { Context } from "./context.ts"
-import { promise_forever, promise_reject, promise_resolve } from "./deps.ts"
+import { isFunction, promise_forever, promise_reject, promise_resolve } from "./deps.ts"
 import { SimpleSignalConfig, SimpleSignal_Factory } from "./signal.ts"
 import { Accessor, AsyncSetter, ID, SignalUpdateStatus, Updater } from "./typedefs.ts"
 
@@ -32,7 +32,7 @@ export const AsyncStateSignal_Factory = (ctx: Context) => {
 		): Promise<T> {
 			const
 				_this = this,
-				new_value_is_updater = (typeof new_value === "function") && !(new_value instanceof Promise)
+				new_value_is_updater = isFunction(new_value) && !(new_value instanceof Promise)
 			// evaluate the `new_value` based on the updater function applied to the old value `this.value`
 			new_value = new_value_is_updater ? (new_value as Updater<T | Promise<T>>)(_this.value) : new_value
 			if (new_value instanceof Promise) {
