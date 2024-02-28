@@ -10,7 +10,7 @@
  * // the `\@jsx h` comment comes here, but I can't show multiline comments in this documentation.
  * // the `\@jsxFrag hf` comment comes here, but I can't show multiline comments in this documentation.
  * 
- * import { createHyperScript } from "./path/to/jsx_transform.ts"
+ * import { createHyperScript } from "./path/to/tsignal_ts/jsx/hyperscript.ts"
  * import { Context } from "./path/to/tsignal_ts/mod.ts"
  * 
  * const ctx = new Context()
@@ -42,10 +42,10 @@
  * @module
 */
 
-import { Stringifyable, array_isArray, isFunction, object_entries } from "../src/deps.ts"
-import { DOMAttrSignal_Factory, DOMTextNodeSignal_Factory } from "../src/dom_signal.ts"
-import { Context } from "../src/mod.ts"
-import { Accessor } from "../src/typedefs.ts"
+import { Context } from "../context.ts"
+import { Stringifyable, array_isArray, isFunction, object_entries } from "../deps.ts"
+import { DOMAttrSignal_Factory, DOMTextNodeSignal_Factory } from "../dom_signal.ts"
+import { Accessor } from "../typedefs.ts"
 
 declare global {
 	namespace JSX {

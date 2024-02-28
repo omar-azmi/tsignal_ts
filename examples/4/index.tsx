@@ -1,8 +1,8 @@
 /** @jsx h */
 /** @jsxFrag hf */
 
+import { createHyperScript } from "../../src/jsx/hyperscript.ts"
 import { Context, MemoSignal_Factory, StateSignal_Factory } from "../../src/mod.ts"
-import { createHyperScript } from "../jsx_transform4.ts"
 
 const
 	ctx = new Context,
