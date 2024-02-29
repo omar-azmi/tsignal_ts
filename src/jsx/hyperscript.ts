@@ -1,11 +1,38 @@
 /** a minimal implementation of JSX runtime element creation. <br>
- * to use in `esbuild`'s javascript build API, you will need to:
- * 0) for the sake of IDE LSP, you will need to include the following two comment lines at the top of your `.tsx` script:
+ * to use in `esbuild`'s javascript build API, you will need to do one of the following options (or do both):
+ * 
+ * 1) option 1 (preferred): <br>
+ *   for JSX to work with your IDE's LSP, and for esbuild to automatically discover the hyperscript functions,
+ *   you will need to include the following two comment lines at the top of your `.tsx` script:
  * ```tsx
  * /** \@jsx h *\/
  * /** \@jsxFrag hf *\/
  * ```
- * 1) import `createHyperScript` from this module to your JSX script, call it, and name the outputs what you named them in step 0:
+ * 
+ * 2) option 2 (no LSP support): <br>
+ *   in the esbuild build options (`BuildOptions`), set `jsxFactory = "h"` and `jsxFragment = "hf"`.
+ * ```ts
+ * import { build, stop } from "https://deno.land/x/esbuild/mod.js"
+ * build({
+ *     entryPoints: ["./path/to/your/script.tsx"],
+ *     jsxFactory: "h",
+ *     jsxFragment: "Fragment",
+ *     // other build options
+ *     minify: true,
+ * })
+ * stop()
+ * ```
+ * 
+ * and now in your `.jsx` script, you should:
+ * - import `createHyperScript` from this module
+ * - create a reactive signal `Context`
+ * - call `createHyperScript` with the signal context `ctx` as the argument
+ * - the returned tuple will contain 3 elements:
+ *     - the first element should be named `h` (which is the name you declare as `\@jsx h` in **option 1** or `jsxFactory = "h"` in **option 2**)
+ *     - the second element should be named `hf` (which is the name you declare as `\@jsxFrag hf` in **option 1** or `jsxFragment = "hf"` in **option 2**)
+ *     - the third can be named anything
+ * 
+ * @example
  * ```tsx
  * // the `\@jsx h` comment comes here, but I can't show multiline comments in this documentation.
  * // the `\@jsxFrag hf` comment comes here, but I can't show multiline comments in this documentation.
@@ -24,19 +51,16 @@
  * const my_elem2 = <div>...my_fragment_elems</div>
  * document.body.appendChild(my_elem)
  * document.body.appendChild(my_elem2)
- * ```
- * 2) in the esbuild build options (`BuildOptions`), set `jsxFactory = "h"` and `jsxFragment = "hf"`,
- *   which is the name of the functions that you assigned in step 0 and step 1 (`const [h, hf] = createHyperScript(ctx)`)
- * ```ts
- * import { build, stop } from "https://deno.land/x/esbuild/mod.js"
- * build({
- *     entryPoints: ["./path/to/your/script.tsx"],
- *     jsxFactory: "h",
- *     jsxFragment: "Fragment",
- *     // other build options
- *     minify: true,
- * })
- * stop()
+ * 
+ * // when creating svgs or xml, you will have to change the DOM namespace, so that the correct kinds of `Node`s are created.
+ * namespaceStack.push("svg")
+ * const my_svg = <svg viewBox="0 0 200 200">
+ *     <g transform="translate(100, 50)">
+ *         <text text-anchor="middle">SVG says Hi!</text>
+ *         <text y="25" text-anchor="middle">SVG stands for "SUGOI! Vector Graphics"</text>
+ *     </g>
+ * </svg>
+ * namespaceStack.pop()
  * ```
  * 
  * @module
@@ -122,7 +146,11 @@ export const createHyperScript = (ctx: Context) => {
 			if (!is_component_generator) {
 				// assign the props as reactive attributes of the new element node
 				for (const [attr_name, attr_value] of object_entries(props)) {
-					component_node.setAttributeNode(createAttr(attr_name, attr_value)[2])
+					// we always attach the attribute node to the designated `component_node` before making it reactive,
+					// because the reactivity may require the existence of a parent node (`attr.ownerElement`)
+					const attr = document.createAttribute(attr_name)
+					component_node.setAttributeNode(attr)
+					createAttr(attr, attr_value)
 				}
 			}
 			component_node.append(...child_nodes)

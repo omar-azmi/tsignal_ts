@@ -40,9 +40,10 @@ const App = () => {
 
 	// we must change the namespace to `svg`, so that hypescript picks up on it, and handles the newly created svg nodes appropriately.
 	namespaceStack.push("svg")
-	const svg_dom = <svg width="200px" height="200px" viewBox="0 0 200 200">
+	const svg_dom = <svg style="user-select: none;" width="200px" height="200px" viewBox="0 0 200 200">
 		<g transform="translate(100, 100)">
 			<circle r="100" fill="lightgrey" stroke="black" />
+			<text text-anchor="middle" y="-25">Apple Watch XVII</text>
 			<line transform={createMemo((id) => `rotate(${currentTime(id).second * 6})`)[1]} class="hand-seconds" y1="0" y2="-100" stroke="red" stroke-width={4} />
 			<line transform={createMemo((id) => `rotate(${currentTime(id).minute * 6})`)[1]} class="hand-minutes" y1="0" y2="-100" stroke="green" stroke-width={4} />
 			<line transform={createMemo((id) => `rotate(${currentTime(id).hour * 5 * 6})`)[1]} class="hand-hours" y1="0" y2="-100" stroke="blue" stroke-width={4} />

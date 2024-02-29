@@ -49,7 +49,6 @@ const App = () => {
 				return value !== undefined && value !== null
 			})
 		})
-		console.log(changed_keys)
 		for (const key of changed_keys) {
 			const todo = todos[key]
 			if (todo && key >= todo_divs.length) {
@@ -57,7 +56,7 @@ const App = () => {
 				const check_box: HTMLInputElement = <input
 					type="checkbox"
 					checked={createMemo((id) => {
-						return (getTodos(id)[0][key] as TodoItem)?.done ?? false
+						return (getTodos(id)[0][key] as TodoItem)?.done ? "" : undefined
 					})[1]}
 				/>
 				const title_input: HTMLInputElement = <input
