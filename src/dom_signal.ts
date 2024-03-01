@@ -6,7 +6,7 @@
 import { Context } from "./context.ts"
 import { isFunction, Stringifyable } from "./deps.ts"
 import { MemoSignalConfig, SimpleSignal_Factory } from "./signal.ts"
-import { Accessor, SignalUpdateStatus, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.ts"
+import { Accessor, SignalUpdateStatus, TO_ID, UNTRACKED_ID } from "./typedefs.ts"
 
 type NodeValue = Stringifyable | null // Node["nodeValue"]
 type AttrValue = Stringifyable | null // Attr["nodeValue"]
@@ -59,11 +59,7 @@ export const DOMSignal_Factory = (ctx: Context) => {
 		) {
 			config.equals ??= dom_value_equality
 			super(node, config as any)
-			// the previous parent must be assigned before `this.fn` gets executed if `config.defer` is `false` (or `undefined`) (via `this.get()`, followed by `this.run()`).
-			// this is because the reactivity function `this.fn` may rely-on/expect the `node` to be already attached to a parent, and my set a value which would ultimately result in the detachment of the `node` from its parent.
-			// but then during reattachment, it will not have any info about what to reattach to.
 			if (fn !== undefined) { this.fn = isFunction(fn) ? fn as any : (() => fn) }
-			this.prev_parent = this.getParentElement()
 			if ((config?.defer ?? false) === false) { this.get() }
 		}
 
@@ -144,11 +140,8 @@ export const DOMTextNodeSignal_Factory = (ctx: Context) => {
 				SignalUpdateStatus.UNCHANGED
 		}
 
-		set(new_value: V | NodeValueUpdater<V>): boolean {
-			// TODO think whether or not we should remove the text node if the new value is null.
-			// if yes, then you should override the `this.setNodeValue` method, and call the `this.detach` method in there if the null value condition is met.
-			return super.set(new_value)
-		}
+		// TODO: in the `set` method, think whether or not we should remove the text node if the new value is null.
+		// if yes, then you should override the `this.setNodeValue` method, and call the `this.detach` method in there if the null value condition is met.
 
 		static create<N extends Text>(dependency_signal: Stringifyable | Accessor<Stringifyable>, config?: DOMSignalConfig<N>): [id: number, dependOnText: Accessor<N>, textNode: Text] {
 			const new_signal = new this<N>(dependency_signal, config)
@@ -181,14 +174,7 @@ export const DOMAttrSignal_Factory = (ctx: Context) => {
 			config?: Omit<DOMSignalConfig<N>, "value">,
 		) {
 			const attr_node = typeof attribute === "string" ? document.createAttribute(attribute) : attribute
-			// the previous parent must be assigned before `this.fn` runs.
-			// so we must defer the potential initial immediate execution by setting `config.defer` to `undefined`,
-			// and then later on acting upon whether the `original_defer` was true or not.
-			// const original_defer = config.defer ?? false
-			// config.defer = undefined
 			super(attr_node as N, dependency_signal, config)
-			// this.prev_parent = this.getParentElement()
-			// if (!original_defer) { this.get() }
 		}
 
 		run(forced?: boolean): SignalUpdateStatus {
