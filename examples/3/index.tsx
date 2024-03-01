@@ -40,7 +40,7 @@ const App = () => {
 
 	// we must change the namespace to `svg`, so that hypescript picks up on it, and handles the newly created svg nodes appropriately.
 	namespaceStack.push("svg")
-	const svg_dom = <svg style="user-select: none;" width="200px" height="200px" viewBox="0 0 200 200">
+	const svg_dom = <svg style="user-select: none;" width="200px" height="200px" viewbox="0 0 200 200">
 		<g transform="translate(100, 100)">
 			<circle r="100" fill="lightgrey" stroke="black" />
 			<text text-anchor="middle" y="-25">Apple Watch XVII</text>
