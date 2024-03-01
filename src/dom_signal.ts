@@ -10,10 +10,15 @@ import { Accessor, SignalUpdateStatus, TO_ID, UNTRACKED_ID, Updater } from "./ty
 
 type NodeValue = Stringifyable | null // Node["nodeValue"]
 type AttrValue = Stringifyable | null // Attr["nodeValue"]
-type NodeValueEqualityFn = <V extends NodeValue>(prev_nodeValue: string | null | undefined, new_nodeValue: V) => boolean
-type NodeValueUpdater = <V extends NodeValue>(prev_value: string | null) => V | string | null
-// TODO: purge the function below
-// const dom_value_equality: (prev_nodeValue: NodeValue | undefined, new_nodeValue: NodeValue) => boolean = default_equality
+type NodeValueEqualityFn<V extends NodeValue = NodeValue> = (prev_nodeValue: string | null | undefined, new_nodeValue: V) => boolean
+type NodeValueUpdater<V extends NodeValue = NodeValue> = (prev_value: string | null) => V | string | null
+
+const dom_value_equality = <V extends NodeValue>(prev_nodeValue: string | null | undefined, new_nodeValue: V): boolean => {
+	// we first standardize the nullability value to `undefined`
+	new_nodeValue ??= undefined as any
+	prev_nodeValue ??= undefined
+	return prev_nodeValue === new_nodeValue?.toString()
+}
 
 
 // @ts-ignore: `equals` is incompatible with the super `MemoSignalConfig` interface.
@@ -43,49 +48,22 @@ export const DOMSignal_Factory = (ctx: Context) => {
 		declare value: N
 		// @ts-ignore: incompatible with super class
 		declare equals: NodeValueEqualityFn<V>
+		declare fn?: Accessor<V>
+		/** the previous parent element is stored in case this node is {@link detach | detached}, followed by a request to {@link reattach}. */
+		protected prev_parent: Element | null = null
 
 		constructor(
-			value?: V,
-			config?: MemoSignalConfig<N>,
+			node: N,
+			fn?: V | Accessor<V>,
+			config: Omit<DOMSignalConfig<N>, "value"> = {},
 		) {
-			super(config?.value, config)
-			// this.fn = fn
-			if (config?.defer === false) { this.get() }
-		}
-
-		// @ts-ignore: signature is incompatible with super class
-		set(new_value: V | NodeValueUpdater<V>): boolean {
-			const
-				node = this.value,
-				old_value = node.nodeValue
-			return !this.equals(old_value, (
-				node.nodeValue = isFunction(new_value) ?
-					(new_value as Updater<NodeValue>)(old_value) :
-					new_value
-			))
-		}
-	}
-}
-
-export const DOMTextNodeSignal_Factory = (ctx: Context) => {
-	// TODO: implement ctx.onDelete
-	// TODO: make this extend MemoSignal instead of SimpleSignal, or extend DOMSignal
-	const onDelete = ctx.onDelete
-
-	return class TextNodeSignal<N extends Text, V extends NodeValue = NodeValue> extends ctx.getClass(SimpleSignal_Factory)<N> {
-		declare value: N
-		// @ts-ignore: incompatible with super class
-		declare equals: NodeValueEqualityFn<V>
-		fn: Accessor<V>
-
-		constructor(
-			dependency_signal: V | Accessor<V>,
-			config?: DOMSignalConfig<N>,
-		) {
-			const text_node = config?.value ?? document.createTextNode("") as N
-			// config.equals = dom_value_equality as any
-			super(text_node, config as any)
-			this.fn = isFunction(dependency_signal) ? dependency_signal as any : (() => dependency_signal)
+			config.equals ??= dom_value_equality
+			super(node, config as any)
+			// the previous parent must be assigned before `this.fn` gets executed if `config.defer` is `false` (or `undefined`) (via `this.get()`, followed by `this.run()`).
+			// this is because the reactivity function `this.fn` may rely-on/expect the `node` to be already attached to a parent, and my set a value which would ultimately result in the detachment of the `node` from its parent.
+			// but then during reattachment, it will not have any info about what to reattach to.
+			if (fn !== undefined) { this.fn = isFunction(fn) ? fn as any : (() => fn) }
+			this.prev_parent = this.getParentElement()
 			if ((config?.defer ?? false) === false) { this.get() }
 		}
 
@@ -97,21 +75,79 @@ export const DOMTextNodeSignal_Factory = (ctx: Context) => {
 			return super.get(observer_id)
 		}
 
+		// @ts-ignore: signature is incompatible with super class
+		set(new_value: V | NodeValueUpdater<V>): boolean {
+			const
+				node = this.value,
+				old_value = node.nodeValue
+			new_value = isFunction(new_value) ? new_value(old_value) : new_value
+			this.setNodeValue(new_value)
+			return !this.equals(old_value, new_value as V)
+		}
+
+		getParentElement(): Element | null { return this.value.parentElement }
+		removeFromParentElement(): boolean { return this.getParentElement()?.removeChild(this.value) ? true : false }
+		appendToElement(element: Element) { element.appendChild(this.value) }
+		getNodeValue() { return this.value.nodeValue }
+		setNodeValue(new_value?: Stringifyable | null | undefined): (string | null) {
+			const is_null = new_value === null || new_value === undefined
+			return (this.value.nodeValue = (is_null ? null : new_value.toString()))
+		}
+
+		/** detach the DOM Node from its parent.
+		 * the most recent parent will be remembered when you call the {@link reattach | `reattach`} method.
+		*/
+		detach(): boolean {
+			const current_parent_elem = this.getParentElement()
+			if (current_parent_elem) {
+				this.prev_parent = current_parent_elem
+				this.removeFromParentElement()
+				return true
+			}
+			return false
+		}
+
+		/** reattach the element back to its original parent node.
+		 * if the parent node is not available, an optional `fallback_element` will be used.
+		 * otherwise, this signal's node won't get attached, and a `false` will be returned.
+		*/
+		reattach(fallback_element?: Element | null): boolean {
+			const element = this.prev_parent ?? fallback_element
+			if (element) {
+				this.appendToElement(element)
+				return true
+			}
+			return false
+		}
+	}
+}
+
+export const DOMTextNodeSignal_Factory = (ctx: Context) => {
+	// TODO: implement ctx.onDelete
+	// TODO: make this extend MemoSignal instead of SimpleSignal, or extend DOMSignal
+	const onDelete = ctx.onDelete
+
+	return class TextNodeSignal<N extends Text, V extends NodeValue = NodeValue> extends ctx.getClass(DOMSignal_Factory)<N, V> {
+		declare fn: Accessor<V>
+
+		constructor(
+			dependency_signal: V | Accessor<V>,
+			config?: DOMSignalConfig<N>,
+		) {
+			const text_node = config?.value ?? document.createTextNode("") as N
+			super(text_node, dependency_signal, config)
+		}
+
 		run(forced?: boolean): SignalUpdateStatus {
 			return this.set(this.fn(this.rid)) ?
 				SignalUpdateStatus.UPDATED :
 				SignalUpdateStatus.UNCHANGED
 		}
 
-		// @ts-ignore: signature is incompatible with super class
 		set(new_value: V | NodeValueUpdater<V>): boolean {
-			const
-				node = this.value,
-				old_value = node.nodeValue,
-				new_value_str: Stringifyable = isFunction(new_value) ? new_value(old_value) : new_value,
-				should_delete_text = new_value_str === undefined || new_value_str === null
-			node.nodeValue = should_delete_text ? null : new_value_str.toString()
-			return !this.equals(old_value, new_value)
+			// TODO think whether or not we should remove the text node if the new value is null.
+			// if yes, then you should override the `this.setNodeValue` method, and call the `this.detach` method in there if the null value condition is met.
+			return super.set(new_value)
 		}
 
 		static create<N extends Text>(dependency_signal: Stringifyable | Accessor<Stringifyable>, config?: DOMSignalConfig<N>): [id: number, dependOnText: Accessor<N>, textNode: Text] {
@@ -126,42 +162,33 @@ export const DOMTextNodeSignal_Factory = (ctx: Context) => {
 }
 
 export const DOMAttrSignal_Factory = (ctx: Context) => {
-	return class AttrNodeSignal<N extends Attr, V extends AttrValue = AttrValue> extends ctx.getClass(SimpleSignal_Factory)<N> {
-		declare value: N
-		// @ts-ignore: incompatible with super class
-		declare equals: NodeValueEqualityFn<V>
-		fn: Accessor<V>
-		/** the previous parent node is stored in case the attribute is detached, followed by a request to reatach. */
-		private prev_parent: Element | null = null
+	return class AttrNodeSignal<N extends Attr, V extends AttrValue = AttrValue> extends ctx.getClass(DOMSignal_Factory)<N, V> {
+		declare fn: Accessor<V>
 
 		constructor(
 			attribute_node: Attr,
 			dependency_signal: Stringifyable | Accessor<Stringifyable>,
-			config?: DOMSignalConfig<N> & { value: never },
+			config?: Omit<DOMSignalConfig<N>, "value">,
 		)
 		constructor(
 			attribute_name: Attr["name"],
 			dependency_signal: Stringifyable | Accessor<Stringifyable>,
-			config?: DOMSignalConfig<N> & { value: never },
+			config?: Omit<DOMSignalConfig<N>, "value">,
 		)
 		constructor(
 			attribute: N | N["name"],
-			dependency_signal: Stringifyable | Accessor<Stringifyable>,
-			config?: DOMSignalConfig<N> & { value: never },
+			dependency_signal: V | Accessor<V>,
+			config?: Omit<DOMSignalConfig<N>, "value">,
 		) {
 			const attr_node = typeof attribute === "string" ? document.createAttribute(attribute) : attribute
-			super(attr_node as N, config as any)
-			this.fn = isFunction(dependency_signal) ? dependency_signal as any : (() => dependency_signal)
-			this.prev_parent = attr_node.ownerElement
-			if ((config?.defer ?? false) === false) { this.get() }
-		}
-
-		get(observer_id?: TO_ID | UNTRACKED_ID): N {
-			if (this.rid) {
-				this.run()
-				this.rid = 0 as UNTRACKED_ID
-			}
-			return super.get(observer_id)
+			// the previous parent must be assigned before `this.fn` runs.
+			// so we must defer the potential initial immediate execution by setting `config.defer` to `undefined`,
+			// and then later on acting upon whether the `original_defer` was true or not.
+			// const original_defer = config.defer ?? false
+			// config.defer = undefined
+			super(attr_node as N, dependency_signal, config)
+			// this.prev_parent = this.getParentElement()
+			// if (!original_defer) { this.get() }
 		}
 
 		run(forced?: boolean): SignalUpdateStatus {
@@ -170,31 +197,31 @@ export const DOMAttrSignal_Factory = (ctx: Context) => {
 				SignalUpdateStatus.UNCHANGED
 		}
 
-		// @ts-ignore: signature is incompatible with super class
-		set(new_value: (Stringifyable | null) | Updater<Stringifyable | null>): boolean {
-			// we remove the attribute if the `fn()` evaluates to `undefined` or `null`.
+		getParentElement(): Element | null {
+			// and attribute node's `parentElement` is always null, even when attached.
+			// we must use `ownerElement` to figure out the node this attribute is attached to.
+			return this.value.ownerElement
+		}
+		removeFromParentElement(): boolean { return this.getParentElement()?.removeAttributeNode(this.value) ? true : false }
+		appendToElement(element: Element): void {
+			element.setAttributeNode(this.value)
+		}
+		setNodeValue(new_value?: Stringifyable | null | undefined): (string | null) {
+			// we remove the attribute if the `new_value` is `undefined` or `null`.
 			// otherwise, we stringify the result.
 			// note that an empty string (`""`) will keep the attribute, but without the equals sign.
 			const
-				attr_node = this.value,
-				old_value = attr_node.nodeValue,
-				new_value_str: Stringifyable = isFunction(new_value) ? new_value(old_value) : new_value,
+				current_parent_elem = this.getParentElement(),
 				// remember that empty string is also falsey, so we cannot rely on ternary expression
-				should_remove_attr = new_value_str === undefined || new_value_str === null,
-				current_parent_elem = attr_node.ownerElement
-			if (should_remove_attr && current_parent_elem) {
-				this.prev_parent = current_parent_elem
-				current_parent_elem.removeAttributeNode(attr_node)
-			} else if (should_remove_attr) {
-				// nothing needs to be done
-			} else {
-				attr_node.nodeValue = new_value_str.toString()
-				if (!current_parent_elem) {
-					// the attribute is currently not attached. so we attach it back to its previous most recent parent
-					this.prev_parent?.setAttributeNode(attr_node)
-				}
+				should_remove_attr = new_value === undefined || new_value === null
+			if (should_remove_attr) {
+				super.detach()
+			} else if (!current_parent_elem) {
+				// the attribute is currently not attached, but the new value is not null,
+				// so we attach it back to its previous most recent parent.
+				this.reattach()
 			}
-			return !this.equals(old_value, new_value)
+			return super.setNodeValue(new_value)
 		}
 
 		static create(attribute_node: Attr, dependency_signal: Stringifyable | Accessor<Stringifyable>, config?: DOMSignalConfig<Attr> & { value: never }): [id: number, dependOnAttr: Accessor<Attr>, attrNode: Attr]
@@ -209,4 +236,3 @@ export const DOMAttrSignal_Factory = (ctx: Context) => {
 		}
 	}
 }
-
