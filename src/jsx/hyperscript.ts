@@ -68,7 +68,7 @@
 
 import { Context } from "../context.ts"
 import { Stringifyable, array_isArray, bind_array_pop, bind_array_push, bind_stack_seek, isFunction, object_entries } from "../deps.ts"
-import { DOMAttrSignal_Factory, DOMTextNodeSignal_Factory } from "../dom_signal.ts"
+import { AttrSignal_Factory, TextNodeSignal_Factory } from "../dom_signal.ts"
 import { Accessor } from "../typedefs.ts"
 
 declare global {
@@ -102,8 +102,8 @@ const specialTagNameSpaces = {
 type NameSpaceURI = typeof specialTagNameSpaces
 
 // TODO: think of how to make `createHyperScript` extendable via add-on style plugins.
-// for example, it would become possible for you to declare that `ctx.addClass(DOMTextNodeSignal_Factory)` should be used for creating reactive text nodes,
-// and `ctx.addClass(DOMAttrSignal_Factory)` should be used for creating attribute nodes. etc...
+// for example, it would become possible for you to declare that `ctx.addClass(TextNodeSignal_Factory)` should be used for creating reactive text nodes,
+// and `ctx.addClass(AttrSignal_Factory)` should be used for creating attribute nodes. etc...
 
 // TODO: make hyperscript handler for `<input />` html types (and buttons, links, etc...) that
 // can fire an update cycle (such as setting a state signal, or firing an effect signal).
@@ -112,8 +112,9 @@ type NameSpaceURI = typeof specialTagNameSpaces
 /** create hyperscript functions to create elements and fragments during runtime after your JSX or TSX have been transformed. */
 export const createHyperScript = (ctx: Context) => {
 	const
-		createText = ctx.addClass(DOMTextNodeSignal_Factory),
-		createAttr = ctx.addClass(DOMAttrSignal_Factory)
+		// TODO: add `HtmlNodeSignal_Factory` too, and test it. or maybe implement an addon style feature to add `HtmlNodeSignal_Factory`, and other custom signal classes.
+		createText = ctx.addClass(TextNodeSignal_Factory),
+		createAttr = ctx.addClass(AttrSignal_Factory)
 
 	const
 		namespace_stack: (keyof NameSpaceURI)[] = [],

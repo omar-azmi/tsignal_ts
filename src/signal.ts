@@ -8,7 +8,12 @@ import { log_get_request, parseEquality } from "./funcdefs.ts"
 import { Accessor, EqualityCheck, EqualityFn, ID, Setter, SignalClass, SignalUpdateStatus, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.ts"
 
 // TODO: add `SimpleSignalConfig.deps: ID[]` option to manually enforce dependance on certain signal ids. this can be useful when you want a
-//	signal to defer its first run, yet you also want that signal to react to any of its dependencies, before this signal ever gets run
+//       signal to defer its first run, yet you also want that signal to react to any of its dependencies, before this signal ever gets run.
+// TODO: alternatively, add the options `SimpleSignalConfig.oninit: (ctx: Context, signal: Signal<T>) => void` and `SimpleSignalConfig.ondelete: (ctx: Context, signal: Signal<T>) => void`,
+//       which would call the `oninit` function right after the `SimpleSignal` instance is constructed, and absolutely before any potential `signal.get`,
+//       or `signal.run`, or `signal.fn` is ever executed. this would also let you declare custom `deps: ID[]` within the function, and apply it to the `ctx`.
+//       on the other hand, `ondelete` will be called right before the signal and its dependency graph-edges are deleted.
+//       this is in contrast to `ctx.onInit`, which runs based on the non-zero-ablity of `id`, and `ctx.onDelete`, which runs after the graph-edges have been deleted.
 
 export interface SimpleSignalConfig<T> {
 	/** give a name to the signal for debugging purposes */
@@ -172,7 +177,7 @@ export const MemoSignal_Factory = (ctx: Context) => {
 				SignalUpdateStatus.UNCHANGED
 		}
 
-		static create<T>(fn: MemoFn<T>, config?: SimpleSignalConfig<T>): [idMemo: ID, getMemo: Accessor<T>] {
+		static create<T>(fn: MemoFn<T>, config?: MemoSignalConfig<T>): [idMemo: ID, getMemo: Accessor<T>] {
 			const new_signal = new this(fn, config)
 			return [
 				new_signal.id,
@@ -213,7 +218,7 @@ export const LazySignal_Factory = (ctx: Context) => {
 			return super.get(observer_id)
 		}
 
-		static create<T>(fn: MemoFn<T>, config?: SimpleSignalConfig<T>): [idLazy: ID, getLazy: Accessor<T>] {
+		static create<T>(fn: MemoFn<T>, config?: MemoSignalConfig<T>): [idLazy: ID, getLazy: Accessor<T>] {
 			const new_signal = new this(fn, config)
 			return [
 				new_signal.id,

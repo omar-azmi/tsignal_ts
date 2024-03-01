@@ -13,7 +13,7 @@ export {
 	bind_set_has,
 	bind_stack_seek
 } from "https://deno.land/x/kitchensink_ts@v0.7.3/binder.ts"
-export { array_isArray, noop, object_assign, object_entries, object_keys, object_values, promise_forever, promise_reject, promise_resolve } from "https://deno.land/x/kitchensink_ts@v0.7.3/builtin_aliases_deps.ts"
+export { array_isArray, noop, object_assign, object_entries, object_keys, object_values, promise_forever, promise_reject, promise_resolve, symbol_iterator } from "https://deno.land/x/kitchensink_ts@v0.7.3/builtin_aliases_deps.ts"
 export { THROTTLE_REJECT, throttle, throttleAndTrail } from "https://deno.land/x/kitchensink_ts@v0.7.3/lambda.ts"
 export { isPrimitive, prototypeOfClass } from "https://deno.land/x/kitchensink_ts@v0.7.3/struct.ts"
 export type { CallableFunctionsOf, ConstructorOf, MethodsOf, StaticImplements } from "https://deno.land/x/kitchensink_ts@v0.7.3/typedefs.ts"
