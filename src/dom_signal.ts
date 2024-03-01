@@ -4,22 +4,36 @@
 */
 
 import { Context } from "./context.ts"
-import { isFunction, Stringifyable } from "./deps.ts"
+import { Stringifyable, isFunction, isPrimitive, symbol_iterator } from "./deps.ts"
 import { MemoSignalConfig, SimpleSignal_Factory } from "./signal.ts"
 import { Accessor, SignalUpdateStatus, TO_ID, UNTRACKED_ID } from "./typedefs.ts"
 
-type NodeValue = Stringifyable | null // Node["nodeValue"]
-type AttrValue = Stringifyable | null // Attr["nodeValue"]
-type NodeValueEqualityFn<V extends NodeValue = NodeValue> = (prev_nodeValue: string | null | undefined, new_nodeValue: V) => boolean
-type NodeValueUpdater<V extends NodeValue = NodeValue> = (prev_value: string | null) => V | string | null
 
-const dom_value_equality = <V extends NodeValue>(prev_nodeValue: string | null | undefined, new_nodeValue: V): boolean => {
+export type NodeValue = Stringifyable | null // Node["nodeValue"]
+export type AttrValue = Stringifyable | null // Attr["nodeValue"]
+type ElementCollection = Array<Element | Node> | HTMLCollection
+export type HtmlInnerValue = (Element | Node) | ElementCollection | NodeValue // HTMLElement["innerHTML"]
+export type NodeValueEqualityFn<V extends NodeValue = NodeValue> = (prev_nodeValue: string | null | undefined, new_nodeValue: V) => boolean
+export type NodeValueUpdater<V extends NodeValue = NodeValue> = (prev_value: string | null) => V | string | null
+
+export const default_dom_value_equality = <V extends NodeValue>(prev_nodeValue: string | null | undefined, new_nodeValue: V): boolean => {
 	// we first standardize the nullability value to `undefined`
 	new_nodeValue ??= undefined as any
 	prev_nodeValue ??= undefined
 	return prev_nodeValue === new_nodeValue?.toString()
 }
-
+const
+	is_DOM_node = (obj: any): obj is Node => {
+		return obj instanceof Node
+	},
+	as_DOM_node_array = (obj: any): undefined | Array<Element | Node> => {
+		obj = is_DOM_node(obj) ? [obj] : obj
+		if (isPrimitive(obj) || !(symbol_iterator in obj)) { return }
+		const
+			item_iterator = obj[symbol_iterator]() as IterableIterator<any>,
+			first_item = item_iterator.next().value
+		return is_DOM_node(first_item) ? [first_item, ...item_iterator] : undefined
+	}
 
 // @ts-ignore: `equals` is incompatible with the super `MemoSignalConfig` interface.
 interface DOMSignalConfig<N extends Node> extends MemoSignalConfig<N> {
@@ -43,6 +57,7 @@ interface DOMSignalConfig<N extends Node> extends MemoSignalConfig<N> {
 	value?: N
 }
 
+
 export const DOMSignal_Factory = (ctx: Context) => {
 	return class DOMSignal<N extends Node, V extends NodeValue> extends ctx.getClass(SimpleSignal_Factory)<N> {
 		declare value: N
@@ -57,7 +72,7 @@ export const DOMSignal_Factory = (ctx: Context) => {
 			fn?: V | Accessor<V>,
 			config: Omit<DOMSignalConfig<N>, "value"> = {},
 		) {
-			config.equals ??= dom_value_equality
+			config.equals ??= default_dom_value_equality
 			super(node, config as any)
 			if (fn !== undefined) { this.fn = isFunction(fn) ? fn as any : (() => fn) }
 			if ((config?.defer ?? false) === false) { this.get() }
@@ -77,15 +92,15 @@ export const DOMSignal_Factory = (ctx: Context) => {
 				node = this.value,
 				old_value = node.nodeValue
 			new_value = isFunction(new_value) ? new_value(old_value) : new_value
-			this.setNodeValue(new_value)
+			this.setNodeValue(new_value as V)
 			return !this.equals(old_value, new_value as V)
 		}
 
-		getParentElement(): Element | null { return this.value.parentElement }
-		removeFromParentElement(): boolean { return this.getParentElement()?.removeChild(this.value) ? true : false }
-		appendToElement(element: Element) { element.appendChild(this.value) }
+		protected getParentElement(): Element | null { return this.value.parentElement }
+		protected removeFromParentElement(): boolean { return this.getParentElement()?.removeChild(this.value) ? true : false }
+		protected appendToElement(element: Element) { element.appendChild(this.value) }
 		getNodeValue() { return this.value.nodeValue }
-		setNodeValue(new_value?: Stringifyable | null | undefined): (string | null) {
+		setNodeValue(new_value?: V | undefined): (string | null) {
 			const is_null = new_value === null || new_value === undefined
 			return (this.value.nodeValue = (is_null ? null : new_value.toString()))
 		}
@@ -118,9 +133,9 @@ export const DOMSignal_Factory = (ctx: Context) => {
 	}
 }
 
-export const DOMTextNodeSignal_Factory = (ctx: Context) => {
+
+export const TextNodeSignal_Factory = (ctx: Context) => {
 	// TODO: implement ctx.onDelete
-	// TODO: make this extend MemoSignal instead of SimpleSignal, or extend DOMSignal
 	const onDelete = ctx.onDelete
 
 	return class TextNodeSignal<N extends Text, V extends NodeValue = NodeValue> extends ctx.getClass(DOMSignal_Factory)<N, V> {
@@ -143,8 +158,8 @@ export const DOMTextNodeSignal_Factory = (ctx: Context) => {
 		// TODO: in the `set` method, think whether or not we should remove the text node if the new value is null.
 		// if yes, then you should override the `this.setNodeValue` method, and call the `this.detach` method in there if the null value condition is met.
 
-		static create<N extends Text>(dependency_signal: Stringifyable | Accessor<Stringifyable>, config?: DOMSignalConfig<N>): [id: number, dependOnText: Accessor<N>, textNode: Text] {
-			const new_signal = new this<N>(dependency_signal, config)
+		static create<N extends Text, V extends NodeValue = NodeValue>(dependency_signal: V | Accessor<V>, config?: DOMSignalConfig<N>): [id: number, dependOnText: Accessor<N>, textNode: Text] {
+			const new_signal = new this<N, V>(dependency_signal, config)
 			return [
 				new_signal.id,
 				new_signal.bindMethod("get"),
@@ -154,18 +169,19 @@ export const DOMTextNodeSignal_Factory = (ctx: Context) => {
 	}
 }
 
-export const DOMAttrSignal_Factory = (ctx: Context) => {
+
+export const AttrSignal_Factory = (ctx: Context) => {
 	return class AttrNodeSignal<N extends Attr, V extends AttrValue = AttrValue> extends ctx.getClass(DOMSignal_Factory)<N, V> {
 		declare fn: Accessor<V>
 
 		constructor(
 			attribute_node: Attr,
-			dependency_signal: Stringifyable | Accessor<Stringifyable>,
+			dependency_signal: AttrValue | Accessor<AttrValue>,
 			config?: Omit<DOMSignalConfig<N>, "value">,
 		)
 		constructor(
 			attribute_name: Attr["name"],
-			dependency_signal: Stringifyable | Accessor<Stringifyable>,
+			dependency_signal: AttrValue | Accessor<AttrValue>,
 			config?: Omit<DOMSignalConfig<N>, "value">,
 		)
 		constructor(
@@ -173,8 +189,8 @@ export const DOMAttrSignal_Factory = (ctx: Context) => {
 			dependency_signal: V | Accessor<V>,
 			config?: Omit<DOMSignalConfig<N>, "value">,
 		) {
-			const attr_node = typeof attribute === "string" ? document.createAttribute(attribute) : attribute
-			super(attr_node as N, dependency_signal, config)
+			const attr_node = typeof attribute === "string" ? document.createAttribute(attribute) as N : attribute
+			super(attr_node, dependency_signal, config)
 		}
 
 		run(forced?: boolean): SignalUpdateStatus {
@@ -183,16 +199,16 @@ export const DOMAttrSignal_Factory = (ctx: Context) => {
 				SignalUpdateStatus.UNCHANGED
 		}
 
-		getParentElement(): Element | null {
+		protected getParentElement(): Element | null {
 			// and attribute node's `parentElement` is always null, even when attached.
 			// we must use `ownerElement` to figure out the node this attribute is attached to.
 			return this.value.ownerElement
 		}
-		removeFromParentElement(): boolean { return this.getParentElement()?.removeAttributeNode(this.value) ? true : false }
-		appendToElement(element: Element): void {
+		protected removeFromParentElement(): boolean { return this.getParentElement()?.removeAttributeNode(this.value) ? true : false }
+		protected appendToElement(element: Element): void {
 			element.setAttributeNode(this.value)
 		}
-		setNodeValue(new_value?: Stringifyable | null | undefined): (string | null) {
+		setNodeValue(new_value?: V | undefined): (string | null) {
 			// we remove the attribute if the `new_value` is `undefined` or `null`.
 			// otherwise, we stringify the result.
 			// note that an empty string (`""`) will keep the attribute, but without the equals sign.
@@ -212,8 +228,65 @@ export const DOMAttrSignal_Factory = (ctx: Context) => {
 
 		static create(attribute_node: Attr, dependency_signal: Stringifyable | Accessor<Stringifyable>, config?: DOMSignalConfig<Attr> & { value: never }): [id: number, dependOnAttr: Accessor<Attr>, attrNode: Attr]
 		static create(attribute_name: Attr["name"], dependency_signal: Stringifyable | Accessor<Stringifyable>, config?: DOMSignalConfig<Attr> & { value: never }): [id: number, dependOnAttr: Accessor<Attr>, attrNode: Attr]
-		static create<N extends Attr>(attribute: N | N["name"], dependency_signal: Stringifyable | Accessor<Stringifyable>, config?: DOMSignalConfig<N>): [id: number, dependOnAttr: Accessor<N>, attrNode: N] {
-			const new_signal = new this<N>(attribute as any, dependency_signal, config as any)
+		static create<N extends Attr, V extends AttrValue = AttrValue>(attribute: N | N["name"], dependency_signal: V | Accessor<V>, config?: DOMSignalConfig<N>): [id: number, dependOnAttr: Accessor<N>, attrNode: N] {
+			const new_signal = new this<N, V>(attribute as any, dependency_signal, config as any)
+			return [
+				new_signal.id,
+				new_signal.bindMethod("get"),
+				new_signal.value,
+			]
+		}
+	}
+}
+
+// TODO: create an example and test this. moreover, maybe add it as an addon to your JSX runtime `h` function.
+export const HtmlNodeSignal_Factory = (ctx: Context) => {
+	return class HtmlNodeSignal<N extends HTMLElement, V extends HtmlInnerValue = HtmlInnerValue> extends ctx.getClass(DOMSignal_Factory)<N, V> {
+		declare fn: Accessor<V>
+
+		constructor(
+			element: HTMLElement,
+			dependency_signal: HtmlInnerValue | Accessor<HtmlInnerValue>,
+			config?: Omit<DOMSignalConfig<N>, "value">,
+		)
+		constructor(
+			element_tag: HTMLElement["tagName"],
+			dependency_signal: HtmlInnerValue | Accessor<HtmlInnerValue>,
+			config?: Omit<DOMSignalConfig<N>, "value">,
+		)
+		constructor(
+			element: N | N["tagName"],
+			dependency_signal: V | Accessor<V>,
+			config?: Omit<DOMSignalConfig<N>, "value">,
+		) {
+			const element_node = typeof element === "string" ? document.createElement(element) as N : element
+			super(element_node, dependency_signal, config)
+		}
+
+		run(forced?: boolean): SignalUpdateStatus {
+			return this.set(this.fn(this.rid)) ?
+				SignalUpdateStatus.UPDATED :
+				SignalUpdateStatus.UNCHANGED
+		}
+
+		setNodeValue(new_value?: V | undefined): (string | null) {
+			// TODO: for the time being, I am naively assigning the innerHTML, without considering potential side effects.
+			// there might be bad consequences to that. I should look into it later.
+			const
+				element = this.value,
+				new_value_as_node_array = as_DOM_node_array(new_value)
+			if (new_value_as_node_array) {
+				element.replaceChildren(...new_value_as_node_array)
+				return null
+			}
+			const is_null = new_value === null || new_value === undefined
+			return (element.innerHTML = (is_null ? "" : new_value.toString()))
+		}
+
+		static create(element: HTMLElement, dependency_signal: HtmlInnerValue | Accessor<HtmlInnerValue>, config?: DOMSignalConfig<HTMLElement> & { value: never }): [id: number, dependOnElement: Accessor<HTMLElement>, elementNode: HTMLElement]
+		static create(element_tag: HTMLElement["tagName"], dependency_signal: HtmlInnerValue | Accessor<HtmlInnerValue>, config?: DOMSignalConfig<HTMLElement> & { value: never }): [id: number, dependOnElement: Accessor<HTMLElement>, elementNode: HTMLElement]
+		static create<N extends HTMLElement, V extends HtmlInnerValue = HtmlInnerValue>(element: N | N["tagName"], dependency_signal: V | Accessor<V>, config?: DOMSignalConfig<N>): [id: number, dependOnElement: Accessor<N>, elementNode: N] {
+			const new_signal = new this<N, V>(element as any, dependency_signal, config as any)
 			return [
 				new_signal.id,
 				new_signal.bindMethod("get"),
