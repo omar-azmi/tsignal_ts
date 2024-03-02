@@ -11,6 +11,7 @@ import { Accessor, EqualityCheck, EqualityFn, ID, SignalUpdateStatus, TO_ID, UNT
 // - `Dict<K, V> extends SimpleSignal<[new_value: V | undefined, mutated_key: K, dict: Dict<K, V>["dict"]]>` . the `undefined` in `new_value: V | undefined` exemplifies the case in which a key gets deleted
 // - `List<V> extends SimpleSignal<[new_value: V | undefined, mutated_index: V, list: List<V>["list"]]>` . the `undefined` in `new_value: V | undefined` exemplifies the case in which a value gets deleted
 // - `DictMemo<K, V>(fn: (observed_id?: ID) => [changed_value: V, changed_key: K, dict: DictMemo<K, V>["dict"])] ) extends Dict<K, V> //with computation + memorization`
+// TODO: once you implement `ListState<V>`, use it inplace of `RecordStateSignal` in `/examples/2/` (the todos app)
 
 
 export interface RecordSignalConfig<K extends PropertyKey, V> {
