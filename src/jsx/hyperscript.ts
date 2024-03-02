@@ -71,6 +71,13 @@ import { Stringifyable, array_isArray, bind_array_pop, bind_array_push, bind_sta
 import { AttrSignal_Factory, TextNodeSignal_Factory } from "../dom_signal.ts"
 import { Accessor } from "../typedefs.ts"
 
+// TODO: convert this to a standalone package named "hyperscope", in which:
+// - I will implement a JSX runtime that has different scopes of behaviors, defined by the end user.
+// - it will work very similar to the way our current `specialTagNameSpaces` works, but instead of being just for DOM_NameSpaces,
+//   it will allow for custom runtime scopes, and different evaluation strategies based on the current scope,
+//   all while still being restricted to JSX's `h()` function signature.
+// - Once that package is implemented, I'll import it here and replace this portion of the code with plugins/scopes for `tsignal_ts`.
+
 declare global {
 	namespace JSX {
 		// TODO: the commented interface below should be used if we were to abide by strict typing. but we currently don't.

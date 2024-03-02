@@ -295,3 +295,12 @@ export const HtmlNodeSignal_Factory = (ctx: Context) => {
 		}
 	}
 }
+
+// TODO: implement this after you've implemented hyperscript scopes
+// export const EventStateSignal_Factory = (ctx: Context) => {
+// 	return class EventStateSignal extends ctx.getClass(SimpleSignal_Factory) {
+// 	}
+// }
+// // EventListener || EventListenerOrEventListenerObject
+// const a = new Image()
+// a.addEventListener("", (s: Event): void => { }, {})
