@@ -10,9 +10,9 @@ Non-mandatory example:
 // if the top-most rectangle's `right` or `top` bounding-box's sides exceed `600`, then we should log `"overflow"` in the console.
 // at the end of every reaction cycle, log the number of computations done in the console.
 
-import { Context } from "../src/context.ts"
-import { StateSignal_Factory, MemoSignal_Factory, EffectSignal_Factory } from "../src/signal.ts"
-import type { Accessor, Setter } from "../src/typedefs.ts"
+import { Context } from "jsr:@azmi/tsignal/context"
+import { StateSignal_Factory, MemoSignal_Factory, EffectSignal_Factory } from "jsr:@azmi/tsignal/signal"
+import type { Accessor, Setter } from "jsr:@azmi/tsignal/typedefs"
 
 /** `x` and `y` are relative to the parent-rectangle's top-left corner (which is their (x, y) position). */
 interface Rect { x: number, y: number, width: number, height: number }
@@ -151,13 +151,13 @@ fireRedraw()
 ## Signal Classes
 
 here is a list of all signal classes that are currently available:
-- [`StateSignal`](/src/signal.ts#L108)
-- [`MemoSignal`](/src/signal.ts#L146)
-- [`LazySignal`](/src/signal.ts#L187)
-- [`EffectSignal`](/src/signal.ts#L241)
-- [`RecordSignal`](/src/record_signal.ts#L44)
-- [`RecordStateSignal`](/src/record_signal.ts#L132)
-- [`MemoRecordSignal`](/src/record_signal.ts#L171)
+- [`StateSignal`](./src/signal.ts#L108)
+- [`MemoSignal`](./src/signal.ts#L146)
+- [`LazySignal`](./src/signal.ts#L187)
+- [`EffectSignal`](./src/signal.ts#L241)
+- [`RecordSignal`](./src/record_signal.ts#L44)
+- [`RecordStateSignal`](./src/record_signal.ts#L132)
+- [`MemoRecordSignal`](./src/record_signal.ts#L171)
 
 
 ## Theory
@@ -220,7 +220,7 @@ nodes_sorted = [ A, B, D, G, C, E, H, F, I, J ]
 
 ### Update State of each Signal
 
-in this library, during an update cycle, when a signal is executed to update (through its [`run method`](/src/typedefs.ts#L136) in {@link typedefs!Signal.run}), it returns the numeric enum [`SignalUpdateStatus`](/src/typedefs.ts#L176), which conveys a specific instruction to the `Context`'s update loop:
+in this library, during an update cycle, when a signal is executed to update (through its [`run method`](./src/typedefs.ts#L136) in {@link typedefs!Signal.run}), it returns the numeric enum [`SignalUpdateStatus`](./src/typedefs.ts#L176), which conveys a specific instruction to the `Context`'s update loop:
 - ` 1` or `SignalUpdateStatus.UPDATED`: this signal's value has been updated, and therefore its observers should be updated too.
 - ` 0` or `SignalUpdateStatus.UNCHANGED`: this signal's value has not changed, and therefore its observers should be _not_ be updated by this signal.
 do note that an observer signal will still run if some _other_ of its dependency signal did update this cycle (i.e. had a status value of `1`).
@@ -235,7 +235,7 @@ currently, it does not abort its own observers.
 #### Algorithm:
 
 given an array of `source_ids` to initiate the signal from (simultaneously),
-the `Context`'s [update cycle](/src/context.ts#L148) ({@link context!Context.fireUpdateCycle}) works by following the steps below:
+the `Context`'s [update cycle](./src/context.ts#L148) ({@link context!Context.fireUpdateCycle}) works by following the steps below:
 - starting with the `source_ids`, sort the DAG graph into a topologically ordered array `topological_ids` (via [DFS](https://en.wikipedia.org/wiki/Topological_sorting#Depth-first_search)), where:
   - `source_ids` are **always** at the beginning of the `topological_ids` array.
 - create an empty set of signal ids called `not_to_visit`, which will contain the signals whose dependencies (at least one) have declared an aborted status (`SignalUpdateStatus.ABORTED`).
@@ -314,8 +314,8 @@ and assuming that signal `B` does not change when executed (i.e. `status = Signa
 recomputing the topologically ordered signal ids at the beginning of every update cycle is wasteful,
 so instead, we memorize the result of a topological ordering when certain the update is initiated from a certain `source_ids`. <br>
 in order to memorize the result, we first hash the array `source_ids` to a `number` that is invariant to the positional ordering of the ids inside of `source_ids`. <br>
-the hashing function is defined in [`hash_ids`](/src/funcdefs.ts#L46) ({@link funcdefs!hash_ids}),
-and the memorization/caching function is defined in [`get_ids_to_visit`](/src/context.ts#L96) ({@link context!get_ids_to_visit}).
+the hashing function is defined in [`hash_ids`](./src/funcdefs.ts#L46) ({@link funcdefs!hash_ids}),
+and the memorization/caching function is defined in [`get_ids_to_visit`](./src/context.ts#L96) ({@link context!get_ids_to_visit}).
 
 the cache is only valid if no mutations to the DAG graph (addition or deletion of nodes or edges) have been done. <br>
 that's why we clear the cache whenever a mutative action is taken within the `Context`'s graph, such as:

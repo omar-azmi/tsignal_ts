@@ -5,8 +5,8 @@ on:
     branches:
       - main
     paths:
-      - "src/readme.md"
-      - "src/license.md"
+      - "readme.md"
+      - "license.md"
 
 permissions:
   contents: write
@@ -18,18 +18,18 @@ jobs:
       - name: clone repo
         uses: actions/checkout@v3
 
-      - name: copy readme.md
-        run: cp "src/readme.md" ".github/readme.md"
+      - name: copy "/readme.md" to "/src/readme.md"
+        run: cp "readme.md" "src/readme.md"
 
-      - name: copy license.md
-        run: cp "src/license.md" "license.md"
+      - name: copy "/license.md" to "/src/license.md"
+        run: cp "license.md" "src/license.md"
 
       - name: commit additions
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add --force ".github/readme.md" "license.md"
+          git add --force "src/readme.md" "src/license.md"
           git commit -m "update file via \"github-repo-ci.yml\""
           git push
-          git rm --cached ".github/readme.md" "license.md"
+          git rm --cached "src/readme.md" "src/license.md"
           git push

@@ -37,8 +37,8 @@
  * // the `\@jsx h` comment comes here, but I can't show multiline comments in this documentation.
  * // the `\@jsxFrag hf` comment comes here, but I can't show multiline comments in this documentation.
  * 
- * import { createHyperScript } from "./path/to/tsignal_ts/jsx/hyperscript.ts"
- * import { Context } from "./path/to/tsignal_ts/mod.ts"
+ * import { createHyperScript } from "./path/to/tsignal/jsx/hyperscript.ts"
+ * import { Context } from "./path/to/tsignal/mod.ts"
  * 
  * const ctx = new Context()
  * const [h, hf, namespaceStack] = createHyperScript(ctx)
