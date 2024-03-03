@@ -1,5 +1,4 @@
-import { ensureFile } from "https://deno.land/std@0.204.0/fs/mod.ts"
-import { doubleCompileFiles } from "./build_tools.ts"
+import { doubleCompileFiles, ensureFile } from "./build_tools.ts"
 
 
 /** use:

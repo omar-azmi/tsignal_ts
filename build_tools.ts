@@ -1,33 +1,23 @@
 /** some build specific utility functions */
-import { ensureDir } from "https://deno.land/std@0.204.0/fs/mod.ts"
-import { join as pathJoin } from "https://deno.land/std@0.204.0/path/mod.ts"
-import { BuildOptions, PackageJson } from "https://deno.land/x/dnt@0.38.1/mod.ts"
+export { build as dntBuild } from "https://deno.land/x/dnt@0.40.0/mod.ts"
+export type {
+	BuildOptions as ESBuildOptions,
+	OutputFile as ESOutputFile,
+	TransformOptions as ESTransformOptions
+} from "https://deno.land/x/esbuild@v0.20.1/mod.js"
+export { copy as copyFolder, emptyDir, ensureDir, ensureFile } from "jsr:@std/fs@0.218.2"
+export { dirname as pathDirname, join as pathJoin, relative as relativePath } from "jsr:@std/path@0.218.2"
+import { BuildOptions, PackageJson } from "https://deno.land/x/dnt@0.40.0/mod.ts"
 import {
 	BuildOptions as ESBuildOptions,
 	OutputFile as ESOutputFile,
 	TransformOptions as ESTransformOptions,
 	build as esbuild, stop as esstop, transform as estransform
-} from "https://deno.land/x/esbuild@v0.17.19/mod.js"
-import { denoPlugins } from "https://deno.land/x/esbuild_deno_loader@0.8.1/mod.ts"
-export { ensureDir, ensureFile, walk as walkDir } from "https://deno.land/std@0.204.0/fs/mod.ts"
-export { join as pathJoin, relative as relativePath } from "https://deno.land/std@0.204.0/path/mod.ts"
-export { stop as esstop } from "https://deno.land/x/esbuild@v0.17.19/mod.js"
-export type {
-	BuildOptions as ESBuildOptions,
-	OutputFile as ESOutputFile,
-	TransformOptions as ESTransformOptions
-} from "https://deno.land/x/esbuild@v0.17.19/mod.js"
+} from "https://deno.land/x/esbuild@v0.20.1/mod.js"
+import { denoPlugins } from "jsr:@luca/esbuild-deno-loader@0.9.0"
+import { ensureDir } from "jsr:@std/fs@0.218.2"
+import { join as pathJoin } from "jsr:@std/path@0.218.2"
 
-
-export const mainEntrypoint: string = "./src/mod.ts"
-export const subEntrypoints: string[] = [
-	"./src/async_signal.ts",
-	"./src/context.ts",
-	"./src/funcdefs.ts",
-	"./src/record_signal.ts",
-	"./src/signal.ts",
-	"./src/typedefs.ts",
-]
 
 export interface LeftoverArtifacts {
 	cleanup: () => Promise<void>
@@ -42,18 +32,25 @@ interface NPM_Artifacts extends TemporaryFiles {
 	files: ["package.json", "tsconfig.json"]
 }
 
-let deno_json: { [key: string]: any }
+const get_deno_json = async () => { return (await import("./deno.json", { with: { type: "json" } })).default }
+const add_leading_relative_path_slash = (path: string) => path.startsWith("./") ? path : "./" + path
+let deno_json: ReturnType<typeof get_deno_json>
 export const getDenoJson = async (base_dir: string = "./") => {
-	deno_json ??= JSON.parse(await Deno.readTextFile(pathJoin(base_dir, "./deno.json")))
+	deno_json ??= (await import(
+		add_leading_relative_path_slash(pathJoin(base_dir, "./deno.json")),
+		{ with: { type: "json" } })
+	).default
 	return deno_json
 }
 
 export const createPackageJson = async (deno_json_dir: string = "./", overrides: Partial<PackageJson> = {}): Promise<PackageJson> => {
-	const { name, version, description, author, license, repository, bugs, devDependencies } = await getDenoJson(deno_json_dir)
+	const { name, version, description, author, license, repository, bugs, exports, devDependencies } = await getDenoJson(deno_json_dir)
+	// note that if you use dnt (deno-to-node), then `exports` will get overwritten
 	return {
 		name: name ?? "",
 		version: version ?? "0.0.0",
-		description, author, license, repository, bugs, devDependencies,
+		description, author, license, repository,
+		bugs, devDependencies, exports,
 		...overrides
 	}
 }
@@ -61,7 +58,7 @@ export const createPackageJson = async (deno_json_dir: string = "./", overrides:
 export const createTSConfigJson = async (deno_json_dir: string = "./", overrides: Partial<{ compilerOptions: BuildOptions["compilerOptions"] }> = {}): Promise<{ "$schema": string, compilerOptions: BuildOptions["compilerOptions"] }> => {
 	const { compilerOptions } = await getDenoJson(deno_json_dir)
 	// remove "deno.ns" from compiler options, as it breaks `dnt` (I think)
-	compilerOptions.lib = (compilerOptions.lib as string[]).filter((v) => v.toLowerCase() !== "deno.ns")
+	compilerOptions.lib = (compilerOptions.lib).filter((v) => v.toLowerCase() !== "deno.ns")
 	Object.assign(compilerOptions,
 		{
 			target: "ESNext",
@@ -76,7 +73,7 @@ export const createTSConfigJson = async (deno_json_dir: string = "./", overrides
 		"$schema": "https://json.schemastore.org/tsconfig",
 		...overrides,
 		compilerOptions,
-	}
+	} as any
 }
 
 export const createNPMFiles = async (
@@ -138,7 +135,7 @@ export const doubleCompileFiles = async (
 	})
 
 	const bundled_files = await Promise.all(bundled_code.outputFiles.map(
-		async ({ text, path }, file_number): Promise<ESOutputFile> => {
+		async ({ text, path, hash }, file_number): Promise<ESOutputFile> => {
 			const
 				js_text = (await estransform(text, {
 					minify: true,
@@ -151,6 +148,7 @@ export const doubleCompileFiles = async (
 			console.log("bundled file", file_number, "\n\t", "output path:", path, "\n\t", "binary size:", js_text_uint8.byteLength / 1024, "kb")
 			return {
 				path,
+				hash,
 				text: js_text,
 				contents: js_text_uint8
 			}
