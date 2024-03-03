@@ -11,6 +11,40 @@
 	"bugs": {
 		"url": "https://github.com/omar-azmi/tsignal_ts/issues"
 	},
+	"exports": {
+		".": "./src/mod.ts",
+		"./async_signal": "./src/async_signal.ts",
+		"./context": "./src/context.ts",
+		"./funcdefs": "./src/funcdefs.ts",
+		"./record_signal": "./src/record_signal.ts",
+		"./signal": "./src/signal.ts",
+		"./typedefs": "./src/typedefs.ts"
+	},
+	"publish": {
+		"exclude": [
+			"./.vscode/",
+			"./.github/",
+			"./test/",
+			"./build*.ts",
+			"clean.ts"
+		]
+	},
+	"test": {
+		"include": [
+			"./test/",
+			"./src/mod.ts"
+		]
+	},
+	"fmt": {
+		"useTabs": true,
+		"semiColons": false,
+		"singleQuote": false,
+		"lineWidth": 800,
+		"proseWrap": "never",
+		"include": [
+			"./src/"
+		]
+	},
 	"compilerOptions": {
 		"lib": [
 			"esnext",
@@ -21,13 +55,13 @@
 		"allowJs": true
 	},
 	"dependencies": {
-		"kitchensink_ts": "^0.7.3"
+		"kitchensink": "^0.7.5"
 	},
 	"devDependencies": {
 		"typescript": "^5.0.0",
-		"typedoc": "^0.24.8",
-		"typedoc-plugin-missing-exports": "^2.1.0",
-		"esbuild": "^0.17.19"
+		"esbuild": "^0.20.1",
+		"typedoc": "^0.25.9",
+		"typedoc-plugin-missing-exports": "^2.2.0"
 	},
 	"node_packageManager": "npm",
 	"tasks": {
@@ -36,6 +70,7 @@
 		"build-npm": "deno run -A ./build_npm.ts",
 		"build-npm-dist": "cd \"./npm/\" && npm run build-dist",
 		"clean": "deno run -A ./clean.ts",
-		"test": "deno test -A ./src/mod.ts && deno test -A ./test/"
+		"test": "deno test -A",
+		"publish-jsr": "deno publish --allow-slow-types"
 	}
 }

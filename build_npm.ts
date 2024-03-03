@@ -1,13 +1,15 @@
-import { emptyDir } from "https://deno.land/std@0.204.0/fs/mod.ts"
-import { basename as pathBasename, join as pathJoin } from "https://deno.land/std@0.204.0/path/mod.ts"
-import { build } from "https://deno.land/x/dnt@0.38.1/mod.ts"
-import { createPackageJson, createTSConfigJson, getDenoJson, mainEntrypoint, subEntrypoints } from "./build_tools.ts"
+import { createPackageJson, createTSConfigJson, dntBuild, emptyDir, getDenoJson, pathJoin } from "./build_tools.ts"
 
 
 const npm_dir = "./npm/"
 const deno_json_dir = "./"
-const deno_json = await getDenoJson(deno_json_dir)
-const library_name = deno_json.name ?? "library"
+const {
+	name: library_name = "library",
+	exports,
+	node_packageManager,
+} = await getDenoJson(deno_json_dir)
+const mainEntrypoint = exports["."]
+
 const package_json = await createPackageJson(deno_json_dir, {
 	scripts: {
 		"build-dist": `npm run build-esm && npm run build-esm-minify && npm run build-iife && npm run build-iife-minify`,
@@ -15,20 +17,19 @@ const package_json = await createPackageJson(deno_json_dir, {
 		"build-esm-minify": `npx esbuild "${mainEntrypoint}" --bundle --minify --format=esm --outfile="./dist/${library_name}.esm.min.js"`,
 		"build-iife": `npx esbuild "${mainEntrypoint}" --bundle --format=iife --outfile="./dist/${library_name}.iife.js"`,
 		"build-iife-minify": `npx esbuild "${mainEntrypoint}" --bundle --minify --format=iife --outfile="./dist/${library_name}.iife.min.js"`,
-
 	}
 })
 const tsconfig_json = await createTSConfigJson(deno_json_dir)
 
 await emptyDir(npm_dir)
-await build({
-	entryPoints: [
-		mainEntrypoint,
-		...subEntrypoints.map(path => ({ name: "./" + pathBasename(path, ".ts"), path: path })),
-	],
+await dntBuild({
+	entryPoints: Object.entries(exports).map(([export_path, source_path]) => ({
+		name: export_path,
+		path: source_path,
+	})),
 	outDir: npm_dir,
-	shims: { deno: true },
-	packageManager: deno_json.node_packageManager,
+	shims: { deno: "dev" },
+	packageManager: node_packageManager,
 	package: {
 		...package_json
 	},
@@ -41,10 +42,10 @@ await build({
 	mappings: Object.fromEntries(
 		["binder", "builtin_aliases_deps", "lambda", "struct", "typedefs",].map((submodule_path) => {
 			return [
-				"https://deno.land/x/kitchensink_ts@v0.7.3/" + submodule_path + ".ts",
+				"jsr:@azmi/kitchensink@0.7.5/" + submodule_path + ".ts",
 				{
-					name: "kitchensink_ts",
-					version: "^v0.7.3",
+					name: "@azmi/kitchensink",
+					version: "^0.7.5",
 					subPath: submodule_path,
 				}
 			]
@@ -53,13 +54,12 @@ await build({
 })
 
 // copy other files
-Deno.copyFileSync("./src/readme.md", pathJoin(npm_dir, "./src/readme.md"))
-Deno.copyFileSync("./src/readme.md", pathJoin(npm_dir, "readme.md"))
-Deno.copyFileSync("./src/license.md", pathJoin(npm_dir, "license.md"))
-Deno.copyFileSync("./.github/code_of_conduct.md", pathJoin(npm_dir, "code_of_conduct.md"))
-Deno.writeTextFileSync(pathJoin(npm_dir, ".gitignore"), "/node_modules/\n")
-Deno.writeTextFileSync(pathJoin(npm_dir, "tsconfig.json"), JSON.stringify(tsconfig_json))
-Deno.writeTextFileSync(pathJoin(npm_dir, ".npmignore"), `
+await Deno.copyFile("./readme.md", pathJoin(npm_dir, "readme.md"))
+await Deno.copyFile("./license.md", pathJoin(npm_dir, "license.md"))
+await Deno.copyFile("./.github/code_of_conduct.md", pathJoin(npm_dir, "code_of_conduct.md"))
+await Deno.writeTextFile(pathJoin(npm_dir, ".gitignore"), "/node_modules/\n")
+await Deno.writeTextFile(pathJoin(npm_dir, "tsconfig.json"), JSON.stringify(tsconfig_json))
+await Deno.writeTextFile(pathJoin(npm_dir, ".npmignore"), `
 code_of_conduct.md
 dist/
 docs/
