@@ -24,9 +24,10 @@
 		"exclude": [
 			"./.vscode/",
 			"./.github/",
+			"./examples/",
 			"./test/",
 			"./build*.ts",
-			"clean.ts"
+			"./clean.ts"
 		]
 	},
 	"test": {
@@ -54,14 +55,31 @@
 		"strict": true,
 		"allowJs": true
 	},
-	"dependencies": {
-		"kitchensink": "^0.7.5"
-	},
-	"devDependencies": {
-		"typescript": "^5.0.0",
-		"esbuild": "^0.20.1",
-		"typedoc": "^0.25.9",
-		"typedoc-plugin-missing-exports": "^2.2.0"
+	"package_json": {
+		"dependencies": {
+			"@azmi/kitchensink": "^0.7.5"
+		},
+		"devDependencies": {
+			"typescript": "^5.0.0",
+			"esbuild": "^0.20.1",
+			"typedoc": "^0.25.9",
+			"typedoc-plugin-missing-exports": "^2.2.0"
+		},
+		"keywords": [
+			"events",
+			"modular",
+			"typescript",
+			"reactive",
+			"state-management",
+			"effects",
+			"data-flow",
+			"signals",
+			"reactive-programming",
+			"reactivity",
+			"topological-sort",
+			"dag",
+			"directed-acyclic-graph"
+		]
 	},
 	"node_packageManager": "npm",
 	"tasks": {

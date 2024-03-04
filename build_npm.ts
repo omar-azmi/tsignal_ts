@@ -40,9 +40,10 @@ await dntBuild({
 	scriptModule: false,
 	test: false,
 	mappings: Object.fromEntries(
+		// TODO: ISSUE: `dnt` won't currently work with `jsr` imports, not until the following issue is resolved: https://github.com/denoland/dnt/issues/378
 		["binder", "builtin_aliases_deps", "lambda", "struct", "typedefs",].map((submodule_path) => {
 			return [
-				"jsr:@azmi/kitchensink@0.7.5/" + submodule_path + ".ts",
+				"jsr:@azmi/kitchensink@0.7.5/" + submodule_path,
 				{
 					name: "@azmi/kitchensink",
 					version: "^0.7.5",
