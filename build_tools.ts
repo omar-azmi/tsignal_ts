@@ -44,13 +44,13 @@ export const getDenoJson = async (base_dir: string = "./") => {
 }
 
 export const createPackageJson = async (deno_json_dir: string = "./", overrides: Partial<PackageJson> = {}): Promise<PackageJson> => {
-	const { name, version, description, author, license, repository, bugs, exports, devDependencies } = await getDenoJson(deno_json_dir)
+	const { name, version, description, author, license, repository, bugs, exports, package_json } = await getDenoJson(deno_json_dir)
 	// note that if you use dnt (deno-to-node), then `exports` will get overwritten
 	return {
 		name: name ?? "",
 		version: version ?? "0.0.0",
-		description, author, license, repository,
-		bugs, devDependencies, exports,
+		description, author, license, repository, bugs, exports,
+		...package_json,
 		...overrides
 	}
 }
