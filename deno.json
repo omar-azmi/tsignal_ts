@@ -1,5 +1,5 @@
 {
-	"name": "@azmi/tsignal",
+	"name": "@oazmi/tsignal",
 	"version": "0.3.1",
 	"description": "a topological order respecting signals library inspired by SolidJS",
 	"author": "Omar Azmi",
@@ -57,7 +57,7 @@
 	},
 	"package_json": {
 		"dependencies": {
-			"@azmi/kitchensink": "^0.7.5"
+			"@oazmi/kitchensink": "^0.7.5-a"
 		},
 		"devDependencies": {
 			"typescript": "^5.0.0",

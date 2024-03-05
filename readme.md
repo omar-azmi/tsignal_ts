@@ -10,9 +10,9 @@ Non-mandatory example:
 // if the top-most rectangle's `right` or `top` bounding-box's sides exceed `600`, then we should log `"overflow"` in the console.
 // at the end of every reaction cycle, log the number of computations done in the console.
 
-import { Context } from "jsr:@azmi/tsignal/context"
-import { StateSignal_Factory, MemoSignal_Factory, EffectSignal_Factory } from "jsr:@azmi/tsignal/signal"
-import type { Accessor, Setter } from "jsr:@azmi/tsignal/typedefs"
+import { Context } from "jsr:@oazmi/tsignal/context"
+import { StateSignal_Factory, MemoSignal_Factory, EffectSignal_Factory } from "jsr:@oazmi/tsignal/signal"
+import type { Accessor, Setter } from "jsr:@oazmi/tsignal/typedefs"
 
 /** `x` and `y` are relative to the parent-rectangle's top-left corner (which is their (x, y) position). */
 interface Rect { x: number, y: number, width: number, height: number }
