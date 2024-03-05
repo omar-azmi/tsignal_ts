@@ -13,7 +13,7 @@ import { Accessor, EqualityCheck, EqualityFn, ID, SignalUpdateStatus, TO_ID, UNT
 // - `DictMemo<K, V>(fn: (observed_id?: ID) => [changed_value: V, changed_key: K, dict: DictMemo<K, V>["dict"])] ) extends Dict<K, V> //with computation + memorization`
 // TODO: once you implement `ListState<V>`, use it inplace of `RecordStateSignal` in `/examples/2/` (the todos app)
 
-
+/** the configuration options used by most record signal constructors. */
 export interface RecordSignalConfig<K extends PropertyKey, V> {
 	/** give a name to the signal for debugging purposes */
 	name?: string
@@ -33,6 +33,7 @@ export interface RecordSignalConfig<K extends PropertyKey, V> {
 	defer?: boolean
 }
 
+/** the configuration options used by memo record signal constructor {@link RecordMemoSignal_Factory | `RecordMemoSignal`}. */
 export interface RecordMemoSignalConfig<K extends PropertyKey, V> extends RecordSignalConfig<K, V> {
 	/** initial value declaration for reactive signals. <br>
 	 * its purpose is only to be used as a previous value (`prev_value`) for the optional `equals` equality function,

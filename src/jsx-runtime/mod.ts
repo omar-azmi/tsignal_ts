@@ -122,19 +122,23 @@ type IntrinsicSVGElements = { [tagName in keyof SVGElementTagNameMap]: Attribute
  * ```
 */
 export namespace JSX {
+	/** {@inheritDoc JSX} */
 	export type IntrinsicElements = IntrinsicHTMLElements & IntrinsicSVGElements
 }
 
-
+/** a reactive text can either be a stringifyable signal `Accessor`, or a regular stringifyable value (which will get upgraded to an accessor). */
 export type ReactiveText = Stringifyable | Accessor<Stringifyable>
 /** the `props` of an `HTMLElement` are simply their attributes */
 export type ElementAttrs = { [attribute_key: Attr["name"]]: ReactiveText }
-export type SingleComponentGenerator<P = {}> = (props?: P) => Element
-export type FragmentComponentGenerator<P = {}> = (props?: P) => Element[]
+type SingleComponentGenerator<P = {}> = (props?: P) => Element
+type FragmentComponentGenerator<P = {}> = (props?: P) => Element[]
+/** a function that generates one `HTMLElement` or an array of them. */
 export type ComponentGenerator<P = {}> = SingleComponentGenerator<P> | FragmentComponentGenerator<P>
-export type ElementChild = ReactiveText | Node
-export type ElementChildren = Array<ElementChild | ElementChild[]>
+type ElementChild = ReactiveText | Node
+type ElementChildren = Array<ElementChild | ElementChild[]>
+/** function signature of the fragment element generator (array of elements). */
 export type HyperScript_CreateFragment = (props: object, ...elements: Node[]) => (typeof elements)
+/** function signature of the hyperscript DOM generator function. */
 export interface HyperScript_CreateElement {
 	(html_tag: string, attrs?: ElementAttrs | null, ...children: ElementChildren): HTMLElement
 	<P = {}>(component: SingleComponentGenerator<P>, props?: P | null, ...children: ElementChildren): Element

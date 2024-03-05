@@ -2,14 +2,21 @@
  * @module
 */
 
-import { DEBUG, THROTTLE_REJECT, bind_set_delete, bind_set_has, noop, throttle } from "./deps.ts"
+import { DEBUG, THROTTLE_REJECT, noop, throttle } from "./deps.ts"
 import { EqualityCheck, EqualityFn, FROM_ID, HASHED_IDS, ID, Signal, TO_ID, UNTRACKED_ID } from "./typedefs.ts"
 
+/** test if `value1 === value2` */
 export const default_equality = (<T>(v1: T, v2: T) => (v1 === v2)) satisfies EqualityFn<any>
+/** an equality function that always returns `false`, so that the signal is always propagated (never the same/equal). <br>
+ * this is useful in circumstances where the value is an object, and has undergone mutation, but is still the same object.
+*/
 export const falsey_equality = (<T>(v1: T, v2: T) => false) satisfies EqualityFn<any>
+/** parses the equality function types and primitives accepted by {@link signal!SimpleSignalConfig.equals | `equals` config field },
+ * and spits out its function equivalent.
+*/
 export const parseEquality = <T>(equals: EqualityCheck<T>) => (equals === false ? falsey_equality : (equals ?? default_equality)) satisfies EqualityFn<any>
 
-/** transforms a regular equality check function ({@link SimpleSignalConfig.equals}) into a one that throttles when called too frequently. <br>
+/** transforms a regular equality check function ({@link signal!SimpleSignalConfig.equals}) into a one that throttles when called too frequently. <br>
  * this means that a signal composed of this as its `equals` function will limit propagating itself further, until at least `delta_time_ms`
  * amount of time has passed since the last time it was potentially propagated.
  * 
@@ -43,15 +50,24 @@ export const throttlingEquals = <T>(delta_time_ms: number, base_equals?: Equalit
 	}
 }
 
+/** this is the special hashing function used by the {@link context!Context}'s dfs-traversal function to cache its output. <br>
+ * this hashing function is invariant of the order in which the `ids` are provided.
+ * but its collision rate has yet to be tested, although I'm faily certain that it is quite resistant for multiple ids under the value `10000`.
+*/
 export const hash_ids = (ids: ID[]): HASHED_IDS => {
 	const sqrt_len = ids.length ** 0.5
 	return ids.reduce((sum, id) => sum + id * (id + sqrt_len), 0)
 }
 
+/** TODO: add to `kitchensink_ts` if important, then cleanup */
+/*
 export const intersection_of_sets = <T>(set1: Set<T>, set2: Set<T>): Array<T> => {
 	return [...set1].filter(bind_set_has(set2))
 }
+*/
 
+/** TODO: add to `kitchensink_ts` if important, then cleanup */
+/*
 export const symmetric_difference_of_sets = <T>(set1: Set<T>, set2: Set<T>): [uniques1: Set<T>, uniques2: Set<T>] => {
 	const
 		union_arr = intersection_of_sets(set1, set2),
@@ -61,6 +77,7 @@ export const symmetric_difference_of_sets = <T>(set1: Set<T>, set2: Set<T>): [un
 	union_arr.forEach(bind_set_delete(uniques2))
 	return [uniques1, uniques2]
 }
+*/
 
 export const log_get_request = /* @__PURE__ */ DEBUG.LOG ? (all_signals_get: (id: ID) => Signal<any> | undefined, observed_id: FROM_ID, observer_id?: TO_ID | UNTRACKED_ID) => {
 	const
