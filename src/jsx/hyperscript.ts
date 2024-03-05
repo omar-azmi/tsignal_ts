@@ -78,13 +78,34 @@ import { Accessor } from "../typedefs.ts"
 //   all while still being restricted to JSX's `h()` function signature.
 // - Once that package is implemented, I'll import it here and replace this portion of the code with plugins/scopes for `tsignal_ts`.
 
+
+type AttributeKey = string
+interface Attributes {
+	[key: AttributeKey]: Stringifyable | Accessor<Stringifyable>
+}
+
+type IntrinsicHTMLElements = { [tagName in keyof HTMLElementTagNameMap]: Attributes }
+type IntrinsicSVGElements = { [tagName in keyof SVGElementTagNameMap]: Attributes }
+
 declare global {
-	namespace JSX {
-		// TODO: the commented interface below should be used if we were to abide by strict typing. but we currently don't.
-		// interface IntrinsicElements extends HTMLElementTagNameMap { }
-		interface IntrinsicElements { [tag_name: string]: any }
+	export namespace JSX {
+		/** a minimal implementation of `JSX.IntrinsicElements` to get syntax highlighting in your `.jsx` and `.tsx` files. <br>
+		 * to use this, and banish all the red error lines under your jsx blocks, simply import this file.
+		 * 
+		 * @example
+		 * ```tsx
+		 * import { } from "./path/to/tsignal/jsx/hyperscript.ts"
+		 * 
+		 * const my_div = <div>
+		 * 	<span>Hello</span>
+		 * 	<span>World!!</span>
+		 * </div>
+		 * ```
+		*/
+		export type IntrinsicElements = IntrinsicHTMLElements & IntrinsicSVGElements
 	}
 }
+
 
 export type ReactiveText = Stringifyable | Accessor<Stringifyable>
 /** the `props` of an `HTMLElement` are simply their attributes */
