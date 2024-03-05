@@ -19,7 +19,7 @@
 		"./record_signal": "./src/record_signal.ts",
 		"./signal": "./src/signal.ts",
 		"./typedefs": "./src/typedefs.ts",
-		"./jsx/hyperscript": "./src/jsx/hyperscript.ts"
+		"./jsx-runtime": "./src/jsx-runtime/mod.ts"
 	},
 	"publish": {
 		"exclude": [

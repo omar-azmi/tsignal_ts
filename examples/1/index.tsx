@@ -1,7 +1,7 @@
 /** @jsx h */
 /** @jsxFrag hf */
 
-import { createHyperScript } from "../../src/jsx/hyperscript.ts"
+import { createHyperScript } from "../../src/jsx-runtime/mod.ts"
 import { Context, StateSignal_Factory } from "../../src/mod.ts"
 
 const

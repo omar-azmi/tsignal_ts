@@ -10,7 +10,7 @@ Wait, this is the readme file... _uhmm_ <br>
 /** @jsx h */
 /** @jsxFrag hf */
 
-import { createHyperScript } from "jsr:@oazmi/tsignal/jsx/hyperscript"
+import { createHyperScript } from "jsr:@oazmi/tsignal/jsx-runtime"
 import { Context, MemoSignal_Factory, StateSignal_Factory } from "jsr:@oazmi/tsignal"
 
 const

@@ -37,7 +37,7 @@
  * // the `\@jsx h` comment comes here, but I can't show multiline comments in this documentation.
  * // the `\@jsxFrag hf` comment comes here, but I can't show multiline comments in this documentation.
  * 
- * import { createHyperScript } from "./path/to/tsignal/jsx/hyperscript.ts"
+ * import { createHyperScript } from "./path/to/tsignal/jsx-runtime/mod.ts"
  * import { Context } from "./path/to/tsignal/mod.ts"
  * 
  * const ctx = new Context()
@@ -66,6 +66,8 @@
  * @module
 */
 
+/// <reference path="./global.d.ts" />
+
 import { Context } from "../context.ts"
 import { Stringifyable, array_isArray, bind_array_pop, bind_array_push, bind_stack_seek, isFunction, object_entries } from "../deps.ts"
 import { AttrSignal_Factory, TextNodeSignal_Factory } from "../dom_signal.ts"
@@ -77,34 +79,6 @@ import { Accessor } from "../typedefs.ts"
 //   it will allow for custom runtime scopes, and different evaluation strategies based on the current scope,
 //   all while still being restricted to JSX's `h()` function signature.
 // - Once that package is implemented, I'll import it here and replace this portion of the code with plugins/scopes for `tsignal_ts`.
-
-
-type AttributeKey = string
-interface Attributes {
-	[key: AttributeKey]: Stringifyable | Accessor<Stringifyable>
-}
-
-type IntrinsicHTMLElements = { [tagName in keyof HTMLElementTagNameMap]: Attributes }
-type IntrinsicSVGElements = { [tagName in keyof SVGElementTagNameMap]: Attributes }
-
-declare global {
-	export namespace JSX {
-		/** a minimal implementation of `JSX.IntrinsicElements` to get syntax highlighting in your `.jsx` and `.tsx` files. <br>
-		 * to use this, and banish all the red error lines under your jsx blocks, simply import this file.
-		 * 
-		 * @example
-		 * ```tsx
-		 * import { } from "./path/to/tsignal/jsx/hyperscript.ts"
-		 * 
-		 * const my_div = <div>
-		 * 	<span>Hello</span>
-		 * 	<span>World!!</span>
-		 * </div>
-		 * ```
-		*/
-		export type IntrinsicElements = IntrinsicHTMLElements & IntrinsicSVGElements
-	}
-}
 
 
 export type ReactiveText = Stringifyable | Accessor<Stringifyable>

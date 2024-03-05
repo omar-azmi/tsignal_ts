@@ -1,7 +1,7 @@
 /** @jsx h */
 /** @jsxFrag hf */
 
-import { createHyperScript } from "../../src/jsx/hyperscript.ts"
+import { createHyperScript } from "../../src/jsx-runtime/mod.ts"
 import { createEffect, createLocalStore, createMemo, createState, ctx } from "./utils.ts"
 
 /** in the esbuild build options (`BuildOptions`), you must set `jsxFactory = "h"` and `jsxFragment = "hf"` */
