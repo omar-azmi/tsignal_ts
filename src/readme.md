@@ -3,16 +3,79 @@ A topological order respecting signals library inspired by [SolidJS](https://www
 What's topological ordering you ask? Check out the readme to understand the problem with most signals libraries. <br>
 Wait, this is the readme file... _uhmm_ <br>
 
-Non-mandatory example:
+## Non-mandatory examples:
+### Build an SVG clock
+```tsx
+// the example is also available at "https://github.com/omar-azmi/tsignal_ts/blob/main/examples/3/index.tsx"
+/** @jsx h */
+/** @jsxFrag hf */
+
+import { createHyperScript } from "jsr:@oazmi/tsignal/jsx-runtime"
+import { Context, MemoSignal_Factory, StateSignal_Factory } from "jsr:@oazmi/tsignal"
+
+const
+	ctx = new Context(),
+	createState = ctx.addClass(StateSignal_Factory),
+	createMemo = ctx.addClass(MemoSignal_Factory)
+
+/** in the esbuild build options (`BuildOptions`), you must set `jsxFactory = "h"` and `jsxFragment = "hf"` */
+export const [h, hf, namespaceStack] = createHyperScript(ctx)
+
+type TimeState = {
+	hour: number
+	minute: number
+	second: number
+}
+
+const App = () => {
+	const
+		now_time = new Date(),
+		today_midnight_epochtime = new Date(now_time.getFullYear(), now_time.getMonth(), now_time.getDate(), 0, 0, 0).getTime(),
+		[, getEpochTime, setEpochTime] = createState<number>(0),
+		[, seconds_since_midnight] = createMemo((id) => {
+			return ((getEpochTime(id) - today_midnight_epochtime) / 1000) | 0
+		})
+	const [, currentTime] = createMemo<TimeState>((id) => {
+		const s = seconds_since_midnight(id)
+		return {
+			second: s % (60),
+			minute: ((s / 60) % 60) | 0,
+			hour: ((s / (60 * 60)) % 12) | 0,
+		}
+	}, { equals: false })
+
+
+	setInterval(() => setEpochTime(Date.now()), 500)
+
+	// we must change the namespace to `svg`, so that hypescript picks up on it, and handles the newly created svg nodes appropriately.
+	namespaceStack.push("svg")
+	const svg_dom = <svg style="user-select: none;" width="200px" height="200px" viewbox="0 0 200 200">
+		<g transform="translate(100, 100)">
+			<circle r="100" fill="lightgrey" stroke="black" />
+			<text text-anchor="middle" y="-25">Apple Watch XVII</text>
+			<line transform={createMemo((id) => `rotate(${currentTime(id).second * 6})`)[1]} class="hand-seconds" y1="0" y2="-100" stroke="red" stroke-width={4} />
+			<line transform={createMemo((id) => `rotate(${currentTime(id).minute * 6})`)[1]} class="hand-minutes" y1="0" y2="-100" stroke="green" stroke-width={4} />
+			<line transform={createMemo((id) => `rotate(${currentTime(id).hour * 5 * 6})`)[1]} class="hand-hours" y1="0" y2="-100" stroke="blue" stroke-width={4} />
+		</g>
+	</svg>
+	// declare that the svg namespace is now over, and switch back to html namespace
+	namespaceStack.pop()
+	return svg_dom
+}
+
+document.body.append(App())
+```
+
+### Reactively compute bounding-boxes of many nested rectangles
 ```ts
 // reactively compute the bounding-boxes of many nested rectangles.
 // the computation should be lazy: if the bounding-box of a child-rectangle hasn't changed, then it shouldn't invoke an update in its parent-rectangle.
 // if the top-most rectangle's `right` or `top` bounding-box's sides exceed `600`, then we should log `"overflow"` in the console.
 // at the end of every reaction cycle, log the number of computations done in the console.
 
-import { Context } from "../src/context.ts"
-import { StateSignal_Factory, MemoSignal_Factory, EffectSignal_Factory } from "../src/signal.ts"
-import type { Accessor, Setter } from "../src/typedefs.ts"
+import { Context } from "jsr:@oazmi/tsignal/context"
+import { StateSignal_Factory, MemoSignal_Factory, EffectSignal_Factory } from "jsr:@oazmi/tsignal/signal"
+import type { Accessor, Setter } from "jsr:@oazmi/tsignal/typedefs"
 
 /** `x` and `y` are relative to the parent-rectangle's top-left corner (which is their (x, y) position). */
 interface Rect { x: number, y: number, width: number, height: number }
@@ -151,13 +214,13 @@ fireRedraw()
 ## Signal Classes
 
 here is a list of all signal classes that are currently available:
-- [`StateSignal`](/src/signal.ts#L108)
-- [`MemoSignal`](/src/signal.ts#L146)
-- [`LazySignal`](/src/signal.ts#L187)
-- [`EffectSignal`](/src/signal.ts#L241)
-- [`RecordSignal`](/src/record_signal.ts#L44)
-- [`RecordStateSignal`](/src/record_signal.ts#L132)
-- [`MemoRecordSignal`](/src/record_signal.ts#L171)
+- [`StateSignal`](./src/signal.ts#L108)
+- [`MemoSignal`](./src/signal.ts#L146)
+- [`LazySignal`](./src/signal.ts#L187)
+- [`EffectSignal`](./src/signal.ts#L241)
+- [`RecordSignal`](./src/record_signal.ts#L44)
+- [`RecordStateSignal`](./src/record_signal.ts#L132)
+- [`MemoRecordSignal`](./src/record_signal.ts#L171)
 
 
 ## Theory
@@ -220,7 +283,7 @@ nodes_sorted = [ A, B, D, G, C, E, H, F, I, J ]
 
 ### Update State of each Signal
 
-in this library, during an update cycle, when a signal is executed to update (through its [`run method`](/src/typedefs.ts#L136) in {@link typedefs!Signal.run}), it returns the numeric enum [`SignalUpdateStatus`](/src/typedefs.ts#L176), which conveys a specific instruction to the `Context`'s update loop:
+in this library, during an update cycle, when a signal is executed to update (through its [`run method`](./src/typedefs.ts#L136) in {@link typedefs!Signal.run}), it returns the numeric enum [`SignalUpdateStatus`](./src/typedefs.ts#L176), which conveys a specific instruction to the `Context`'s update loop:
 - ` 1` or `SignalUpdateStatus.UPDATED`: this signal's value has been updated, and therefore its observers should be updated too.
 - ` 0` or `SignalUpdateStatus.UNCHANGED`: this signal's value has not changed, and therefore its observers should be _not_ be updated by this signal.
 do note that an observer signal will still run if some _other_ of its dependency signal did update this cycle (i.e. had a status value of `1`).
@@ -235,7 +298,7 @@ currently, it does not abort its own observers.
 #### Algorithm:
 
 given an array of `source_ids` to initiate the signal from (simultaneously),
-the `Context`'s [update cycle](/src/context.ts#L148) ({@link context!Context.fireUpdateCycle}) works by following the steps below:
+the `Context`'s [update cycle](./src/context.ts#L148) ({@link context!Context.fireUpdateCycle}) works by following the steps below:
 - starting with the `source_ids`, sort the DAG graph into a topologically ordered array `topological_ids` (via [DFS](https://en.wikipedia.org/wiki/Topological_sorting#Depth-first_search)), where:
   - `source_ids` are **always** at the beginning of the `topological_ids` array.
 - create an empty set of signal ids called `not_to_visit`, which will contain the signals whose dependencies (at least one) have declared an aborted status (`SignalUpdateStatus.ABORTED`).
@@ -314,8 +377,8 @@ and assuming that signal `B` does not change when executed (i.e. `status = Signa
 recomputing the topologically ordered signal ids at the beginning of every update cycle is wasteful,
 so instead, we memorize the result of a topological ordering when certain the update is initiated from a certain `source_ids`. <br>
 in order to memorize the result, we first hash the array `source_ids` to a `number` that is invariant to the positional ordering of the ids inside of `source_ids`. <br>
-the hashing function is defined in [`hash_ids`](/src/funcdefs.ts#L46) ({@link funcdefs!hash_ids}),
-and the memorization/caching function is defined in [`get_ids_to_visit`](/src/context.ts#L96) ({@link context!get_ids_to_visit}).
+the hashing function is defined in [`hash_ids`](./src/funcdefs.ts#L46) ({@link funcdefs!hash_ids}),
+and the memorization/caching function is defined in [`get_ids_to_visit`](./src/context.ts#L96) ({@link context!get_ids_to_visit}).
 
 the cache is only valid if no mutations to the DAG graph (addition or deletion of nodes or edges) have been done. <br>
 that's why we clear the cache whenever a mutative action is taken within the `Context`'s graph, such as:

@@ -3,7 +3,7 @@
 */
 
 import { Context } from "./context.ts"
-import { array_isArray, object_keys, object_values } from "./deps.ts"
+import { array_isArray, isFunction, object_keys, object_values } from "./deps.ts"
 import { SimpleSignal_Factory } from "./signal.ts"
 import { Accessor, EqualityCheck, EqualityFn, ID, SignalUpdateStatus, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.ts"
 
@@ -11,8 +11,9 @@ import { Accessor, EqualityCheck, EqualityFn, ID, SignalUpdateStatus, TO_ID, UNT
 // - `Dict<K, V> extends SimpleSignal<[new_value: V | undefined, mutated_key: K, dict: Dict<K, V>["dict"]]>` . the `undefined` in `new_value: V | undefined` exemplifies the case in which a key gets deleted
 // - `List<V> extends SimpleSignal<[new_value: V | undefined, mutated_index: V, list: List<V>["list"]]>` . the `undefined` in `new_value: V | undefined` exemplifies the case in which a value gets deleted
 // - `DictMemo<K, V>(fn: (observed_id?: ID) => [changed_value: V, changed_key: K, dict: DictMemo<K, V>["dict"])] ) extends Dict<K, V> //with computation + memorization`
+// TODO: once you implement `ListState<V>`, use it inplace of `RecordStateSignal` in `/examples/2/` (the todos app)
 
-
+/** the configuration options used by most record signal constructors. */
 export interface RecordSignalConfig<K extends PropertyKey, V> {
 	/** give a name to the signal for debugging purposes */
 	name?: string
@@ -32,6 +33,7 @@ export interface RecordSignalConfig<K extends PropertyKey, V> {
 	defer?: boolean
 }
 
+/** the configuration options used by memo record signal constructor {@link RecordMemoSignal_Factory | `RecordMemoSignal`}. */
 export interface RecordMemoSignalConfig<K extends PropertyKey, V> extends RecordSignalConfig<K, V> {
 	/** initial value declaration for reactive signals. <br>
 	 * its purpose is only to be used as a previous value (`prev_value`) for the optional `equals` equality function,
@@ -96,7 +98,7 @@ export const RecordSignal_Factory = (ctx: Context) => {
 					key = keys[i],
 					old_value = record[key],
 					new_value = values[i],
-					_new_value = record[key] = typeof new_value === "function" ?
+					_new_value = record[key] = isFunction(new_value) ?
 						(new_value as Updater<V>)(old_value) :
 						new_value,
 					value_has_changed = !equals(old_value, _new_value)

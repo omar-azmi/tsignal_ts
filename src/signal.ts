@@ -3,13 +3,19 @@
 */
 
 import { Context } from "./context.ts"
-import { DEBUG, StaticImplements, bindMethodToSelfByName } from "./deps.ts"
+import { DEBUG, StaticImplements, bindMethodToSelfByName, isFunction } from "./deps.ts"
 import { log_get_request, parseEquality } from "./funcdefs.ts"
-import { Accessor, EqualityCheck, EqualityFn, ID, Setter, SignalClass, SignalUpdateStatus, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.ts"
+import { Accessor, EqualityCheck, EqualityFn, ID, Setter, Signal, SignalClass, SignalUpdateStatus, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.ts"
 
 // TODO: add `SimpleSignalConfig.deps: ID[]` option to manually enforce dependance on certain signal ids. this can be useful when you want a
-//	signal to defer its first run, yet you also want that signal to react to any of its dependencies, before this signal ever gets run
+//       signal to defer its first run, yet you also want that signal to react to any of its dependencies, before this signal ever gets run.
+// TODO: alternatively, add the options `SimpleSignalConfig.oninit: (ctx: Context, signal: Signal<T>) => void` and `SimpleSignalConfig.ondelete: (ctx: Context, signal: Signal<T>) => void`,
+//       which would call the `oninit` function right after the `SimpleSignal` instance is constructed, and absolutely before any potential `signal.get`,
+//       or `signal.run`, or `signal.fn` is ever executed. this would also let you declare custom `deps: ID[]` within the function, and apply it to the `ctx`.
+//       on the other hand, `ondelete` will be called right before the signal and its dependency graph-edges are deleted.
+//       this is in contrast to `ctx.onInit`, which runs based on the non-zero-ablity of `id`, and `ctx.onDelete`, which runs after the graph-edges have been deleted.
 
+/** the configuration options used by most signal constructors, and especially the basic/primitive ones. */
 export interface SimpleSignalConfig<T> {
 	/** give a name to the signal for debugging purposes */
 	name?: string
@@ -29,6 +35,7 @@ export interface SimpleSignalConfig<T> {
 	defer?: boolean
 }
 
+/** the configuration options used by most primitive derived/computed signal constructors. */
 export interface MemoSignalConfig<T> extends SimpleSignalConfig<T> {
 	/** initial value declaration for reactive signals. <br>
 	 * its purpose is only to be used as a previous value (`prev_value`) for the optional `equals` equality function,
@@ -37,10 +44,19 @@ export interface MemoSignalConfig<T> extends SimpleSignalConfig<T> {
 	value?: T
 }
 
+/** an arbitrary instance of a simple/primitive signal. */
 export type SimpleSignalInstance = InstanceType<ReturnType<typeof SimpleSignal_Factory>>
 
+/** the base signal class inherited by most other signal classes. <br>
+ * its only function is to:
+ * - when {@link Signal.get | read}, it return its `this.value`, and register any new observers (those with a nonzero runtime-id {@link Signal.rid | `Signal.rid`})
+ * - if {@link Signal.set | set} to a new value, compare it to its previous value through its `this.equals` function,
+ *   and return a boolean specifying whether or not the old and new values are the same.
+ * - when {@link Signal.run | ran}, it will always return `0` (unchanged), unless it is forced, in which case it will return a `1`.
+*/
 export const SimpleSignal_Factory = (ctx: Context) => {
 	const { newId, getId, setId, addEdge } = ctx
+	/** {@inheritDoc SimpleSignal_Factory} */
 	return class SimpleSignal<T> implements StaticImplements<SignalClass, typeof SimpleSignal> {
 		declare id: ID
 		declare rid: ID | UNTRACKED_ID
@@ -80,7 +96,7 @@ export const SimpleSignal_Factory = (ctx: Context) => {
 		set(new_value: T | Updater<T>): boolean {
 			const old_value = this.value
 			return !this.equals(old_value, (
-				this.value = typeof new_value === "function" ?
+				this.value = isFunction(new_value) ?
 					(new_value as Updater<T>)(old_value) :
 					new_value
 			))
@@ -103,8 +119,10 @@ export const SimpleSignal_Factory = (ctx: Context) => {
 	}
 }
 
+/** creates state signals, which when {@link Signal.set | set} to a changed value, it will fire an update to all of its dependent/observer signals. */
 export const StateSignal_Factory = (ctx: Context) => {
 	const runId = ctx.runId
+	/** {@inheritDoc StateSignal_Factory} */
 	return class StateSignal<T> extends ctx.getClass(SimpleSignal_Factory)<T> {
 		declare value: T
 		declare fn: never
@@ -142,7 +160,11 @@ export const StateSignal_Factory = (ctx: Context) => {
 /** type definition for a memorizable function. to be used as a call parameter for {@link createMemo} */
 export type MemoFn<T> = (observer_id: TO_ID | UNTRACKED_ID) => T | Updater<T>
 
+/** creates a computational/derived signal that only fires again if at least one of its dependencies has fired,
+ * and after the {@link SimpleSignalInstance.fn | recomputation} (`this.fn`), the new computed value is different from the old one (according to `this.equals`).
+*/
 export const MemoSignal_Factory = (ctx: Context) => {
+	/** {@inheritDoc MemoSignal_Factory} */
 	return class MemoSignal<T> extends ctx.getClass(SimpleSignal_Factory)<T> {
 		declare fn: MemoFn<T>
 		declare prerun: never
@@ -172,7 +194,7 @@ export const MemoSignal_Factory = (ctx: Context) => {
 				SignalUpdateStatus.UNCHANGED
 		}
 
-		static create<T>(fn: MemoFn<T>, config?: SimpleSignalConfig<T>): [idMemo: ID, getMemo: Accessor<T>] {
+		static create<T>(fn: MemoFn<T>, config?: MemoSignalConfig<T>): [idMemo: ID, getMemo: Accessor<T>] {
 			const new_signal = new this(fn, config)
 			return [
 				new_signal.id,
@@ -182,8 +204,22 @@ export const MemoSignal_Factory = (ctx: Context) => {
 	}
 }
 
-
+/** similar to {@link MemoSignal_Factory | `MemoSignal`}, creates a computed/derived signal, but it only recomputes if:
+ * - it is dirty (`this.dirty = 1`)
+ * - AND some signal/observer/caller calls this signal to {@link Signal.get | get} its value.
+ * 
+ * this signal becomes dirty when at least one of its dependencies has fired an update. <br>
+ * after which, it will remain dirty unless some caller requests its value, after which it will become not-dirty again.
+ * 
+ * this signal also always fires an update when at least one of its dependencies has fired an update.
+ * and it abandons checking for equality all together, since it only recomputes after a get request,
+ * by which it is too late to signal no update in the value (because its observer is already running).
+ * 
+ * this signal becomes pointless (in terms of efficiency) once a {@link MemoSignal_Factory | `MemoSignal`} depends on it.
+ * but it is increadibly useful (i.e. lazy) when other {@link LazySignal_Factory | `LazySignal`s} depend on one another.
+*/
 export const LazySignal_Factory = (ctx: Context) => {
+	/** {@inheritDoc LazySignal_Factory} */
 	return class LazySignal<T> extends ctx.getClass(SimpleSignal_Factory)<T> {
 		declare fn: MemoFn<T>
 		declare dirty: 0 | 1
@@ -207,13 +243,13 @@ export const LazySignal_Factory = (ctx: Context) => {
 		get(observer_id?: TO_ID | UNTRACKED_ID): T {
 			if (this.rid || this.dirty) {
 				super.set(this.fn(this.rid))
-				this.dirty = 1
+				this.dirty = 0
 				this.rid = 0 as UNTRACKED_ID
 			}
 			return super.get(observer_id)
 		}
 
-		static create<T>(fn: MemoFn<T>, config?: SimpleSignalConfig<T>): [idLazy: ID, getLazy: Accessor<T>] {
+		static create<T>(fn: MemoFn<T>, config?: MemoSignalConfig<T>): [idLazy: ID, getLazy: Accessor<T>] {
 			const new_signal = new this(fn, config)
 			return [
 				new_signal.id,
@@ -236,8 +272,12 @@ export type EffectFn = (observer_id: TO_ID | UNTRACKED_ID) => void | undefined |
 */
 export type EffectEmitter = () => boolean
 
+/** extremely similar to {@link MemoSignal_Factory | `MemoSignal`}, but without a value to output, and also has the ability to fire on its own.
+ * TODO-DOC: explain more
+*/
 export const EffectSignal_Factory = (ctx: Context) => {
 	const runId = ctx.runId
+	/** {@inheritDoc EffectSignal_Factory} */
 	return class EffectSignal extends ctx.getClass(SimpleSignal_Factory)<void> {
 		declare fn: EffectFn
 		declare prerun: never

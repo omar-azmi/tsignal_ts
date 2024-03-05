@@ -7,11 +7,17 @@ var {
   isArray: array_isArray,
   of: array_of
 } = Array, {
-  isInteger: number_isInteger,
   MAX_VALUE: number_MAX_VALUE,
   NEGATIVE_INFINITY: number_NEGATIVE_INFINITY,
-  POSITIVE_INFINITY: number_POSITIVE_INFINITY
+  POSITIVE_INFINITY: number_POSITIVE_INFINITY,
+  isFinite: number_isFinite,
+  isInteger: number_isInteger,
+  isNaN: number_isNaN,
+  parseFloat: number_parseFloat,
+  parseInt: number_parseInt
 } = Number, {
+  random: math_random
+} = Math, {
   assign: object_assign,
   defineProperty: object_defineProperty,
   entries: object_entries,
@@ -23,7 +29,19 @@ var {
   iterator: symbol_iterator,
   toStringTag: symbol_toStringTag
 } = Symbol;
+var {
+  assert: console_assert,
+  clear: console_clear,
+  debug: console_debug,
+  dir: console_dir,
+  error: console_error,
+  log: console_log,
+  table: console_table
+} = console, {
+  now: performance_now
+} = performance;
 var prototypeOfClass = (cls) => cls.prototype;
+var isFunction = (obj) => typeof obj == "function";
 var bindMethodFactoryByName = (instance, method_name, ...args) => (thisArg) => instance[method_name].bind(thisArg, ...args);
 var bindMethodToSelfByName = (self, method_name, ...args) => self[method_name].bind(self, ...args), array_proto = /* @__PURE__ */ prototypeOfClass(Array), map_proto = /* @__PURE__ */ prototypeOfClass(Map), set_proto = /* @__PURE__ */ prototypeOfClass(Set);
 var bind_array_pop = /* @__PURE__ */ bindMethodFactoryByName(array_proto, "pop"), bind_array_push = /* @__PURE__ */ bindMethodFactoryByName(array_proto, "push");
@@ -33,7 +51,8 @@ var bind_set_has = /* @__PURE__ */ bindMethodFactoryByName(set_proto, "has");
 var bind_map_clear = /* @__PURE__ */ bindMethodFactoryByName(map_proto, "clear"), bind_map_delete = /* @__PURE__ */ bindMethodFactoryByName(map_proto, "delete");
 var bind_map_get = /* @__PURE__ */ bindMethodFactoryByName(map_proto, "get");
 var bind_map_set = /* @__PURE__ */ bindMethodFactoryByName(map_proto, "set");
-var THROTTLE_REJECT = /* @__PURE__ */ Symbol("a rejection by a throttled function");
+var TREE_VALUE_UNSET = /* @__PURE__ */ Symbol(1);
+var THROTTLE_REJECT = /* @__PURE__ */ Symbol(1), TIMEOUT = /* @__PURE__ */ Symbol(1);
 var throttle = (delta_time_ms, fn) => {
   let last_call = 0;
   return (...args) => {
@@ -50,8 +69,7 @@ var default_equality = (v1, v2) => v1 === v2, falsey_equality = (v1, v2) => fals
 }, hash_ids = (ids) => {
   let sqrt_len = ids.length ** 0.5;
   return ids.reduce((sum, id) => sum + id * (id + sqrt_len), 0);
-};
-var log_get_request = 0 ? (all_signals_get, observed_id, observer_id) => {
+}, log_get_request = 0 ? (all_signals_get, observed_id, observer_id) => {
   let observed_signal = all_signals_get(observed_id), observer_signal = observer_id ? all_signals_get(observer_id) : { name: "untracked" };
   console.log(
     "GET:	",
@@ -78,7 +96,7 @@ var SimpleSignal_Factory = (ctx) => {
     }
     set(new_value) {
       let old_value = this.value;
-      return !this.equals(old_value, this.value = typeof new_value == "function" ? new_value(old_value) : new_value);
+      return !this.equals(old_value, this.value = isFunction(new_value) ? new_value(old_value) : new_value);
     }
     run(forced) {
       return forced ? 1 : 0;
@@ -135,7 +153,7 @@ var SimpleSignal_Factory = (ctx) => {
     return this.dirty = 1;
   }
   get(observer_id) {
-    return (this.rid || this.dirty) && (super.set(this.fn(this.rid)), this.dirty = 1, this.rid = 0), super.get(observer_id);
+    return (this.rid || this.dirty) && (super.set(this.fn(this.rid)), this.dirty = 0, this.rid = 0), super.get(observer_id);
   }
   static create(fn, config) {
     let new_signal = new this(fn, config);
@@ -187,7 +205,7 @@ var AsyncStateSignal_Factory = (ctx) => {
     }
     setPromise(new_value, rejectable = false) {
       let _this = this;
-      return new_value = typeof new_value == "function" && !(new_value instanceof Promise) ? new_value(_this.value) : new_value, new_value instanceof Promise ? (_this.promise = new_value).then(
+      return new_value = isFunction(new_value) && !(new_value instanceof Promise) ? new_value(_this.value) : new_value, new_value instanceof Promise ? (_this.promise = new_value).then(
         // on promise resolved
         (value) => _this.promise === new_value ? (_this.promise = void 0, _this.setPromise(value, rejectable)) : promise_forever(),
         // on promise rejected
@@ -216,6 +234,8 @@ var Context = class {
   delId;
   runId;
   swapId;
+  onInit;
+  onDelete;
   clearCache;
   addClass;
   getClass;
@@ -256,8 +276,10 @@ var Context = class {
       startBatching();
       let return_value = fn(...args);
       return endBatching(), return_value;
-    };
-    this.addEdge = (src_id, dst_id) => {
+    }, on_delete_func_map = /* @__PURE__ */ new Map(), on_delete_func_map_get = bind_map_get(on_delete_func_map), on_delete_func_map_set = bind_map_set(on_delete_func_map), on_delete_func_map_delete = bind_map_delete(on_delete_func_map);
+    this.onInit = (id, init_func) => id ? init_func() : void 0, this.onDelete = (id, cleanup_func) => {
+      id && on_delete_func_map_set(id, cleanup_func);
+    }, this.addEdge = (src_id, dst_id) => {
       if (src_id + dst_id <= 0)
         return false;
       let forward_items = fmap_get(src_id) ?? (fmap_set(src_id, /* @__PURE__ */ new Set()) && fmap_get(src_id));
@@ -269,7 +291,7 @@ var Context = class {
           rmap_get(dst_id)?.delete(id);
         }), reverse_items?.forEach((src_id) => {
           fmap_get(src_id)?.delete(id);
-        }), forward_items?.clear(), reverse_items?.clear(), fmap_delete(id), rmap_delete(id), ids_to_visit_cache_clear(), true;
+        }), forward_items?.clear(), reverse_items?.clear(), fmap_delete(id), rmap_delete(id), ids_to_visit_cache_clear(), on_delete_func_map_get(id)?.(), on_delete_func_map_delete(id), true;
       }
       return false;
     }, this.swapId = (id1, id2) => {
@@ -327,7 +349,7 @@ var RecordSignal_Factory = (ctx) => class extends ctx.getClass(SimpleSignal_Fact
   setItems(keys, values, ignore) {
     let equals = this.equals, delta_record = this.value, delta_record_initial_len = delta_record.length, record = delta_record[0], len = keys.length;
     for (let i = 0; i < len; i++) {
-      let key = keys[i], old_value = record[key], new_value = values[i], _new_value = record[key] = typeof new_value == "function" ? new_value(old_value) : new_value;
+      let key = keys[i], old_value = record[key], new_value = values[i], _new_value = record[key] = isFunction(new_value) ? new_value(old_value) : new_value;
       !equals(old_value, _new_value) && delta_record.push(key);
     }
     let delta_record_final_len = delta_record.length;

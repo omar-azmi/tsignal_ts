@@ -2,17 +2,41 @@
  * @module
 */
 
-import { DEBUG, bindMethodToSelfByName, bind_array_clear, bind_array_pop, bind_array_push, bind_map_clear, bind_map_delete, bind_map_get, bind_map_set, bind_set_add, bind_set_clear, bind_set_delete, bind_set_has } from "./deps.ts"
+import {
+	DEBUG,
+	bindMethodToSelfByName,
+	bind_array_clear,
+	bind_array_pop,
+	bind_array_push,
+	bind_map_clear,
+	bind_map_delete,
+	bind_map_get,
+	bind_map_set,
+	bind_set_add,
+	bind_set_clear,
+	bind_set_delete,
+	bind_set_has
+} from "./deps.ts"
 import { hash_ids } from "./funcdefs.ts"
 import { EffectFn, MemoFn, SimpleSignalInstance } from "./signal.ts"
 import { EqualityFn, FROM_ID, HASHED_IDS, ID, Signal, SignalClass, SignalUpdateStatus, TO_ID, UNTRACKED_ID } from "./typedefs.ts"
 
+/** if {@link Context | `ctx`} is your context, then these function members are available under {@link Context.dynamic | `ctx.dynamic`}. <br>
+ * the purpose of these functions is to dynamically change an existing signal's `value` (or cached value), equality `equals` checking function, or its recomputation `fn` function. <br>
+ * to use any of these, you must have the signal's {@link Signal.id | original id}, which is typically provided by the {@link SignalClass.create | create function's} first element in the tuple.
+ * // TODO-DOC: give an example
+*/
 export interface Context_Dynamic {
 	setValue: <T>(id: ID, new_value: T) => void,
 	setEquals: <T>(id: ID, new_equals: EqualityFn<T>) => void,
 	setFn: <T>(id: ID, new_fn: MemoFn<T> | EffectFn) => void,
 }
 
+/** if {@link Context | `ctx`} is your context, then these function members are available under {@link Context.batch | `ctx.batch`}. <br>
+ * the purpose of these functions is to widthold any signals from firing until the batching is complete, and then all signals are fired together in one single propagation cycle. <br>
+ * this is useful in circumstances where you have a array or dictionary like signal which must undergo many mutations all at once.
+ * // TODO-DOC: give an example
+*/
 export interface Context_Batch {
 	startBatching: () => number
 	endBatching: () => void
@@ -22,6 +46,27 @@ export interface Context_Batch {
 	) => T
 }
 
+/** a signal context class is required to create and register signals.
+ * without it, signals won't be able to communicate with each other,
+ * and it would not be possible to build a signals dependency graph.
+ * 
+ * @example
+ * ```ts
+ * const ctx = new Context() // create signal context
+ * const createState = ctx.addClass(StateSignal_Factory) // feed the state signal factory function to get a signal generator
+ * const createMemo = ctx.addClass(MemoSignal_Factory) // feed the memo signal factory function to get a signal generator
+ * 
+ * const [idNum, getNum, setNum] = createState<number>(0)
+ * const [idNum2, getNum2] = createMemo((memo_id) => {
+ * 	const num2 = getNum(memo_id) ** 2
+ * 	console.log("recomputing number squared:", num2)
+ * 	return num2
+ * }, { defer: false })
+ * 
+ * setNum(2) // console.log: "recomputing number squared: 4"
+ * setNum(4) // console.log: "recomputing number squared: 16"
+ * ```
+*/
 export class Context {
 	readonly addEdge: (src_id: FROM_ID, dst_id: TO_ID) => boolean
 	readonly delEdge: (src_id: FROM_ID, dst_id: TO_ID) => boolean
@@ -31,6 +76,8 @@ export class Context {
 	readonly delId: (id: ID) => boolean
 	readonly runId: (id: ID) => boolean
 	readonly swapId: (id1: ID, id2: ID) => void
+	readonly onInit: <T>(id: ID, initialization_func: () => T) => T | undefined
+	readonly onDelete: (id: ID, cleanup_func: () => void) => void
 	readonly clearCache: () => void
 	readonly addClass: <SIGNAL_CLASS extends SignalClass>(factory_fn: (ctx: Context) => SIGNAL_CLASS) => SIGNAL_CLASS["create"]
 	readonly getClass: <SIGNAL_CLASS extends SignalClass>(factory_fn: (ctx: Context) => SIGNAL_CLASS) => SIGNAL_CLASS
@@ -226,6 +273,24 @@ export class Context {
 			return return_value
 		}
 
+		const
+			// TODO if you're in favor: on_init_memorization_map
+			on_delete_func_map = new Map<ID, () => void>,
+			on_delete_func_map_get = bind_map_get(on_delete_func_map),
+			on_delete_func_map_set = bind_map_set(on_delete_func_map),
+			on_delete_func_map_delete = bind_map_delete(on_delete_func_map)
+
+		// TODO: debate whether or not should the `onInit` function memorize the `init_func`'s return value, and then always return the same memorized value in consecutive runs
+		this.onInit = <T>(id: ID, init_func: () => T): (T | undefined) => {
+			// whenever the `id` is non-zero, we will run the initialization function.
+			// the runtime `id` is only non-zero in the very first run/invocation of that signal's memo/recomputation function.
+			return id ? init_func() : undefined
+		}
+		this.onDelete = (id: ID, cleanup_func: () => void): void => {
+			// only save the `cleanup_func` on the signal's first run, when `id` is non-zero
+			if (id) { on_delete_func_map_set(id, cleanup_func) }
+		}
+
 		this.addEdge = (src_id: FROM_ID, dst_id: TO_ID): boolean => {
 			if (src_id + dst_id <= (0 as UNTRACKED_ID)) { return false }
 			const forward_items = fmap_get(src_id) ?? (
@@ -276,6 +341,9 @@ export class Context {
 				rmap_delete(id)
 				// the visit cache must be cleared so that the updated dependency tree can be rebuilt
 				ids_to_visit_cache_clear()
+				// call the `onDelete` function associated with the deleted `id`
+				on_delete_func_map_get(id)?.()
+				on_delete_func_map_delete(id)
 				return true
 			}
 			return false

@@ -1,6 +1,5 @@
 /** a low-calorie clone of the popular reactivity library [SolidJS](https://github.com/solidjs/solid). <br>
  * but it handles signals in dependency-topological-order, and is much faster, and less ambiguous in terms of reactivity behavior.
- * @module
 */
 
 export { AsyncStateSignal_Factory } from "./async_signal.ts"
