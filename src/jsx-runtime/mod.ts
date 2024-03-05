@@ -66,7 +66,6 @@
  * @module
 */
 
-/// <reference path="./global.d.ts" />
 
 import { Context } from "../context.ts"
 import { Stringifyable, array_isArray, bind_array_pop, bind_array_push, bind_stack_seek, isFunction, object_entries } from "../deps.ts"
@@ -79,6 +78,52 @@ import { Accessor } from "../typedefs.ts"
 //   it will allow for custom runtime scopes, and different evaluation strategies based on the current scope,
 //   all while still being restricted to JSX's `h()` function signature.
 // - Once that package is implemented, I'll import it here and replace this portion of the code with plugins/scopes for `tsignal_ts`.
+
+
+type AttributeKey = string
+interface Attributes {
+	[key: AttributeKey]: Stringifyable | Accessor<Stringifyable>
+}
+
+type IntrinsicHTMLElements = { [tagName in keyof HTMLElementTagNameMap]: Attributes }
+type IntrinsicSVGElements = { [tagName in keyof SVGElementTagNameMap]: Attributes }
+
+
+/** a minimal implementation of `JSX.IntrinsicElements` to get syntax highlighting in your `.jsx` and `.tsx` files. <br>
+ * to use this, and banish all the red error lines under your jsx blocks, simply import this file.
+ * 
+ * ### how to get it working:
+ * 
+ * - create the file `global.d.ts` in the root of your source code. so for instance: `/src/global.d.ts` is one possibility.
+ * - add the following lines to it:
+ * ```ts
+ * // file: `/src/global.d.ts`
+ * import { JSX as JSXInternal } from "@jsr:@oazmi/tsignal/jsx-runtime"
+ * type IntrinsicElements = JSXInternal.IntrinsicElements
+ * export as namespace JSX
+ * ```
+ * 
+ * - and now, with the global declaration done, your IDE should pick up on the `JSX.IntrinsicElements` definitions.
+ *   however, if it doesn't in certain files, add the following line to the top of that file, so that you can explicitly reference your `global.d.ts` file.
+ * ```tsx
+ * // file `/src/components/navigation_bar.tsx`
+ * /// <reference path="../global.d.ts" />
+ * ```
+ * 
+ * @example
+ * ```tsx
+ * // file `/src/components/navigation_bar.tsx`
+ * /// <reference path="../global.d.ts" />
+ * 
+ * const my_div = <div>
+ * 	<span>Hello</span>
+ * 	<span>World!!</span>
+ * </div>
+ * ```
+*/
+export namespace JSX {
+	export type IntrinsicElements = IntrinsicHTMLElements & IntrinsicSVGElements
+}
 
 
 export type ReactiveText = Stringifyable | Accessor<Stringifyable>
