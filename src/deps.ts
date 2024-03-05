@@ -12,11 +12,11 @@ export {
 	bind_set_delete,
 	bind_set_has,
 	bind_stack_seek
-} from "jsr:@oazmi/kitchensink@0.7.5/binder"
-export { array_isArray, noop, object_assign, object_entries, object_keys, object_values, promise_forever, promise_reject, promise_resolve, symbol_iterator } from "jsr:@oazmi/kitchensink@0.7.5/builtin_aliases_deps"
-export { THROTTLE_REJECT, throttle, throttleAndTrail } from "jsr:@oazmi/kitchensink@0.7.5/lambda"
-export { isFunction, isPrimitive, prototypeOfClass } from "jsr:@oazmi/kitchensink@0.7.5/struct"
-export type { CallableFunctionsOf, ConstructorOf, MethodsOf, StaticImplements } from "jsr:@oazmi/kitchensink@0.7.5/typedefs"
+} from "https://deno.land/x/kitchensink_ts@v0.7.5/binder.ts"
+export { array_isArray, noop, object_assign, object_entries, object_keys, object_values, promise_forever, promise_reject, promise_resolve, symbol_iterator } from "https://deno.land/x/kitchensink_ts@v0.7.5/builtin_aliases_deps.ts"
+export { THROTTLE_REJECT, throttle, throttleAndTrail } from "https://deno.land/x/kitchensink_ts@v0.7.5/lambda.ts"
+export { isFunction, isPrimitive, prototypeOfClass } from "https://deno.land/x/kitchensink_ts@v0.7.5/struct.ts"
+export type { CallableFunctionsOf, ConstructorOf, MethodsOf, StaticImplements } from "https://deno.land/x/kitchensink_ts@v0.7.5/typedefs.ts"
 
 export const enum DEBUG {
 	LOG = 0,

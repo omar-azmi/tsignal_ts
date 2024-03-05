@@ -45,7 +45,7 @@ await dntBuild({
 		// TODO: ISSUE: `dnt` won't currently work with `jsr` imports, not until the following issue is resolved: https://github.com/denoland/dnt/issues/378
 		["binder", "builtin_aliases_deps", "lambda", "struct", "typedefs",].map((submodule_path) => {
 			return [
-				"jsr:@oazmi/kitchensink@0.7.5/" + submodule_path,
+				"https://deno.land/x/kitchensink_ts@v0.7.5/" + submodule_path + ".ts",
 				{
 					name: "@oazmi/kitchensink",
 					version: "0.7.5-a",
@@ -54,7 +54,7 @@ await dntBuild({
 			]
 		})
 	)
-})
+}).catch(() => {})
 
 // copy other files
 await Deno.copyFile("./readme.md", pathJoin(npm_dir, "readme.md"))
