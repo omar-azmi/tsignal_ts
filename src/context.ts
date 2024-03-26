@@ -108,6 +108,7 @@ export class Context {
 		/** creates a topologically ordered array of ids to visit, when propagation is initiated from `source_ids`. <br>
 		 * the function ensures that `source_ids` are always put at the very beginning of the retuned value,
 		 * as this kind of ordering is of utter importance to the {@link fireUpdateCycle | `fireUpdateCycle`} function, which uses this.
+		 * 
 		 * @example
 		 * ```ts
 		 * // assume our directed acyclic graph is:

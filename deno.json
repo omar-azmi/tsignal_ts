@@ -57,9 +57,7 @@
 		"allowJs": true
 	},
 	"package_json": {
-		"dependencies": {
-			"@oazmi/kitchensink": "^0.7.5-a"
-		},
+		"dependencies": {},
 		"devDependencies": {
 			"typescript": "^5.0.0",
 			"esbuild": "^0.20.1",
