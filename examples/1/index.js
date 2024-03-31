@@ -1,0 +1,1 @@
+import{Context as u,StateSignal_Factory as i,createHyperScript as C}from"../chunk-DJFN2WMY.js";var e=new u,c=e.addClass(i),d=e.onDelete,[t,p]=C(e),v=()=>{let[n,o,r]=c(0),a=setInterval(()=>r(l=>l+1),1e3);return d(n,()=>clearInterval(a)),t("div",null,"Count value is ",o)};document.getElementById("root").append(t(v,null));export{t as h,p as hf};
