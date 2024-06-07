@@ -5,7 +5,7 @@
 import { Context } from "./context.ts"
 import { DEBUG, StaticImplements, bindMethodToSelfByName, isFunction } from "./deps.ts"
 import { log_get_request, parseEquality } from "./funcdefs.ts"
-import { Accessor, EqualityCheck, EqualityFn, ID, Setter, Signal, SignalClass, SignalUpdateStatus, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.ts"
+import { PureAccessor, EqualityCheck, EqualityFn, ID, PureSetter, Signal, SignalClass, SignalUpdateStatus, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.ts"
 
 // TODO: add `SimpleSignalConfig.deps: ID[]` option to manually enforce dependance on certain signal ids. this can be useful when you want a
 //       signal to defer its first run, yet you also want that signal to react to any of its dependencies, before this signal ever gets run.
@@ -20,7 +20,7 @@ export interface SimpleSignalConfig<T> {
 	/** give a name to the signal for debugging purposes */
 	name?: string
 
-	/** when a signal's value is updated (either through a {@link Setter}, or a change in the value of a dependency signal in the case of a memo),
+	/** when a signal's value is updated (either through a {@link PureSetter}, or a change in the value of a dependency signal in the case of a memo),
 	 * then the dependants/observers of THIS signal will only be notified if the equality check function evaluates to a `false`. <br>
 	 * see {@link EqualityCheck} to see its function signature and default behavior when left `undefined`
 	*/
@@ -146,7 +146,7 @@ export const StateSignal_Factory = (ctx: Context) => {
 			return false
 		}
 
-		static create<T>(value: T, config?: SimpleSignalConfig<T>): [idState: ID, getState: Accessor<T>, setState: Setter<T>] {
+		static create<T>(value: T, config?: SimpleSignalConfig<T>): [idState: ID, getState: PureAccessor<T>, setState: PureSetter<T>] {
 			const new_signal = new this(value, config)
 			return [
 				new_signal.id,
@@ -194,7 +194,7 @@ export const MemoSignal_Factory = (ctx: Context) => {
 				SignalUpdateStatus.UNCHANGED
 		}
 
-		static create<T>(fn: MemoFn<T>, config?: MemoSignalConfig<T>): [idMemo: ID, getMemo: Accessor<T>] {
+		static create<T>(fn: MemoFn<T>, config?: MemoSignalConfig<T>): [idMemo: ID, getMemo: PureAccessor<T>] {
 			const new_signal = new this(fn, config)
 			return [
 				new_signal.id,
@@ -249,7 +249,7 @@ export const LazySignal_Factory = (ctx: Context) => {
 			return super.get(observer_id)
 		}
 
-		static create<T>(fn: MemoFn<T>, config?: MemoSignalConfig<T>): [idLazy: ID, getLazy: Accessor<T>] {
+		static create<T>(fn: MemoFn<T>, config?: MemoSignalConfig<T>): [idLazy: ID, getLazy: PureAccessor<T>] {
 			const new_signal = new this(fn, config)
 			return [
 				new_signal.id,
@@ -319,7 +319,7 @@ export const EffectSignal_Factory = (ctx: Context) => {
 				SignalUpdateStatus.UNCHANGED
 		}
 
-		static create(fn: EffectFn, config?: SimpleSignalConfig<void>): [idEffect: ID, dependOnEffect: Accessor<void>, fireEffect: EffectEmitter] {
+		static create(fn: EffectFn, config?: SimpleSignalConfig<void>): [idEffect: ID, dependOnEffect: PureAccessor<void>, fireEffect: EffectEmitter] {
 			const new_signal = new this(fn, config)
 			return [
 				new_signal.id,

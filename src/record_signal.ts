@@ -2,10 +2,11 @@
  * @module
 */
 
-import { Context } from "./context.ts"
+import type { Context } from "./context.ts"
 import { array_isArray, isFunction, object_keys, object_values } from "./deps.ts"
 import { SimpleSignal_Factory } from "./signal.ts"
-import { Accessor, EqualityCheck, EqualityFn, ID, SignalUpdateStatus, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.ts"
+import type { EqualityCheck, EqualityFn, ID, PureAccessor, PureSetter, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.ts"
+import { SignalUpdateStatus } from "./typedefs.ts"
 
 // TODO: implement the following kinds of signals: `DictState` (or just `Dict`), `ListState` (or just `List`), `DictMemo`, and `ListMemo`
 // - `Dict<K, V> extends SimpleSignal<[new_value: V | undefined, mutated_key: K, dict: Dict<K, V>["dict"]]>` . the `undefined` in `new_value: V | undefined` exemplifies the case in which a key gets deleted
@@ -18,7 +19,7 @@ export interface RecordSignalConfig<K extends PropertyKey, V> {
 	/** give a name to the signal for debugging purposes */
 	name?: string
 
-	/** when a signal's value is updated (either through a {@link Setter}, or a change in the value of a dependency signal in the case of a memo),
+	/** when a signal's value is updated (either through a {@link PureSetter}, or a change in the value of a dependency signal in the case of a memo),
 	 * then the dependants/observers of THIS signal will only be notified if the equality check function evaluates to a `false`. <br>
 	 * see {@link EqualityCheck} to see its function signature and default behavior when left `undefined`
 	*/
@@ -147,7 +148,7 @@ export const RecordStateSignal_Factory = (ctx: Context) => {
 			config?: RecordSignalConfig<K, V>
 		): [
 				idRecord: ID,
-				getDeltaRecord: Accessor<[record: Record<K, V>, ...changed_keys: K[]]>,
+				getDeltaRecord: PureAccessor<[record: Record<K, V>, ...changed_keys: K[]]>,
 				setRecord: (key: K, new_value: V | Updater<V>, ignore?: boolean) => boolean,
 				setRecords: (keys: K[], values: (V | Updater<V>)[], ignore?: boolean) => boolean,
 				deleteRecord: (key: K, ignore?: boolean) => boolean,
@@ -203,7 +204,7 @@ export const RecordMemoSignal_Factory = (ctx: Context) => {
 			config?: RecordMemoSignalConfig<K, V>
 		): [
 				idRecord: ID,
-				getDeltaRecord: Accessor<[record: Record<K, V>, ...changed_keys: K[]]>,
+				getDeltaRecord: PureAccessor<[record: Record<K, V>, ...changed_keys: K[]]>,
 			] {
 			const new_signal = new this<K, V>(fn, config)
 			return [

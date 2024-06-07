@@ -70,7 +70,7 @@
 import { Context } from "../context.ts"
 import { Stringifyable, array_isArray, bind_array_pop, bind_array_push, bind_stack_seek, isFunction, object_entries } from "../deps.ts"
 import { AttrSignal_Factory, TextNodeSignal_Factory } from "../dom_signal.ts"
-import { Accessor } from "../typedefs.ts"
+import { PureAccessor } from "../typedefs.ts"
 
 // TODO: convert this to a standalone package named "hyperscope", in which:
 // - I will implement a JSX runtime that has different scopes of behaviors, defined by the end user.
@@ -82,7 +82,7 @@ import { Accessor } from "../typedefs.ts"
 
 type AttributeKey = string
 interface Attributes {
-	[key: AttributeKey]: Stringifyable | Accessor<Stringifyable>
+	[key: AttributeKey]: Stringifyable | PureAccessor<Stringifyable>
 }
 
 type IntrinsicHTMLElements = { [tagName in keyof HTMLElementTagNameMap]: Attributes }
@@ -127,7 +127,7 @@ export namespace JSX {
 }
 
 /** a reactive text can either be a stringifyable signal `Accessor`, or a regular stringifyable value (which will get upgraded to an accessor). */
-export type ReactiveText = Stringifyable | Accessor<Stringifyable>
+export type ReactiveText = Stringifyable | PureAccessor<Stringifyable>
 /** the `props` of an `HTMLElement` are simply their attributes */
 export type ElementAttrs = { [attribute_key: Attr["name"]]: ReactiveText }
 type SingleComponentGenerator<P = {}> = (props?: P) => Element

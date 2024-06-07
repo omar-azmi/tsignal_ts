@@ -5,7 +5,7 @@
 
 import { Context } from "../src/context.ts"
 import { EffectSignal_Factory, MemoSignal_Factory, StateSignal_Factory } from "../src/signal.ts"
-import type { Accessor, Setter } from "../src/typedefs.ts"
+import type { PureAccessor, PureSetter } from "../src/typedefs.ts"
 
 /** `x` and `y` are relative to the parent-rectangle's top-left corner (which is their (x, y) position). */
 interface Rect { x: number, y: number, width: number, height: number }
@@ -35,9 +35,9 @@ const boxEqualityFn = (box1: Box | undefined, box2: Box): boolean => {
 type RectangleObject = Rect & { children?: RectangleObject[] }
 
 class Rectangle {
-	rect: Accessor<Rect>
-	setRect: Setter<Rect>
-	box: Accessor<Box>
+	rect: PureAccessor<Rect>
+	setRect: PureSetter<Rect>
+	box: PureAccessor<Box>
 	children: Rectangle[] = []
 
 	constructor(initial_rect: Rect) {
