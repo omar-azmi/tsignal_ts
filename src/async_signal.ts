@@ -5,7 +5,7 @@
 import { Context } from "./context.ts"
 import { isFunction, promise_forever, promise_reject, promise_resolve } from "./deps.ts"
 import { SimpleSignalConfig, SimpleSignal_Factory } from "./signal.ts"
-import { Accessor, AsyncSetter, ID, SignalUpdateStatus, Updater } from "./typedefs.ts"
+import { PureAccessor, AsyncSetter, ID, SignalUpdateStatus, Updater } from "./typedefs.ts"
 
 export const AsyncStateSignal_Factory = (ctx: Context) => {
 	const runId = ctx.runId
@@ -69,7 +69,7 @@ export const AsyncStateSignal_Factory = (ctx: Context) => {
 				super.run(forced)
 		}
 
-		static create<T>(value: T, config?: SimpleSignalConfig<T>): [idAsyncState: ID, getState: Accessor<T>, setStatePromise: AsyncSetter<T>] {
+		static create<T>(value: T, config?: SimpleSignalConfig<T>): [idAsyncState: ID, getState: PureAccessor<T>, setStatePromise: AsyncSetter<T>] {
 			const new_signal = new this(value, config)
 			return [
 				new_signal.id,

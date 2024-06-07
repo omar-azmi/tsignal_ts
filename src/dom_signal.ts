@@ -6,7 +6,7 @@
 import { Context } from "./context.ts"
 import { Stringifyable, isFunction, isPrimitive, symbol_iterator } from "./deps.ts"
 import { MemoSignalConfig, SimpleSignal_Factory } from "./signal.ts"
-import { Accessor, SignalUpdateStatus, TO_ID, UNTRACKED_ID } from "./typedefs.ts"
+import { PureAccessor, SignalUpdateStatus, TO_ID, UNTRACKED_ID } from "./typedefs.ts"
 
 
 export type NodeValue = Stringifyable | null // Node["nodeValue"]
@@ -63,13 +63,13 @@ export const DOMSignal_Factory = (ctx: Context) => {
 		declare value: N
 		// @ts-ignore: incompatible with super class
 		declare equals: NodeValueEqualityFn<V>
-		declare fn?: Accessor<V>
+		declare fn?: PureAccessor<V>
 		/** the previous parent element is stored in case this node is {@link detach | detached}, followed by a request to {@link reattach}. */
 		protected prev_parent: Element | null = null
 
 		constructor(
 			node: N,
-			fn?: V | Accessor<V>,
+			fn?: V | PureAccessor<V>,
 			config: Omit<DOMSignalConfig<N>, "value"> = {},
 		) {
 			config.equals ??= default_dom_value_equality
@@ -139,10 +139,10 @@ export const TextNodeSignal_Factory = (ctx: Context) => {
 	const onDelete = ctx.onDelete
 
 	return class TextNodeSignal<N extends Text, V extends NodeValue = NodeValue> extends ctx.getClass(DOMSignal_Factory)<N, V> {
-		declare fn: Accessor<V>
+		declare fn: PureAccessor<V>
 
 		constructor(
-			dependency_signal: V | Accessor<V>,
+			dependency_signal: V | PureAccessor<V>,
 			config?: DOMSignalConfig<N>,
 		) {
 			const text_node = config?.value ?? document.createTextNode("") as N
@@ -158,7 +158,7 @@ export const TextNodeSignal_Factory = (ctx: Context) => {
 		// TODO: in the `set` method, think whether or not we should remove the text node if the new value is null.
 		// if yes, then you should override the `this.setNodeValue` method, and call the `this.detach` method in there if the null value condition is met.
 
-		static create<N extends Text, V extends NodeValue = NodeValue>(dependency_signal: V | Accessor<V>, config?: DOMSignalConfig<N>): [id: number, dependOnText: Accessor<N>, textNode: Text] {
+		static create<N extends Text, V extends NodeValue = NodeValue>(dependency_signal: V | PureAccessor<V>, config?: DOMSignalConfig<N>): [id: number, dependOnText: PureAccessor<N>, textNode: Text] {
 			const new_signal = new this<N, V>(dependency_signal, config)
 			return [
 				new_signal.id,
@@ -172,21 +172,21 @@ export const TextNodeSignal_Factory = (ctx: Context) => {
 
 export const AttrSignal_Factory = (ctx: Context) => {
 	return class AttrNodeSignal<N extends Attr, V extends AttrValue = AttrValue> extends ctx.getClass(DOMSignal_Factory)<N, V> {
-		declare fn: Accessor<V>
+		declare fn: PureAccessor<V>
 
 		constructor(
 			attribute_node: Attr,
-			dependency_signal: AttrValue | Accessor<AttrValue>,
+			dependency_signal: AttrValue | PureAccessor<AttrValue>,
 			config?: Omit<DOMSignalConfig<N>, "value">,
 		)
 		constructor(
 			attribute_name: Attr["name"],
-			dependency_signal: AttrValue | Accessor<AttrValue>,
+			dependency_signal: AttrValue | PureAccessor<AttrValue>,
 			config?: Omit<DOMSignalConfig<N>, "value">,
 		)
 		constructor(
 			attribute: N | N["name"],
-			dependency_signal: V | Accessor<V>,
+			dependency_signal: V | PureAccessor<V>,
 			config?: Omit<DOMSignalConfig<N>, "value">,
 		) {
 			const attr_node = typeof attribute === "string" ? document.createAttribute(attribute) as N : attribute
@@ -226,9 +226,9 @@ export const AttrSignal_Factory = (ctx: Context) => {
 			return super.setNodeValue(new_value)
 		}
 
-		static create(attribute_node: Attr, dependency_signal: Stringifyable | Accessor<Stringifyable>, config?: DOMSignalConfig<Attr> & { value: never }): [id: number, dependOnAttr: Accessor<Attr>, attrNode: Attr]
-		static create(attribute_name: Attr["name"], dependency_signal: Stringifyable | Accessor<Stringifyable>, config?: DOMSignalConfig<Attr> & { value: never }): [id: number, dependOnAttr: Accessor<Attr>, attrNode: Attr]
-		static create<N extends Attr, V extends AttrValue = AttrValue>(attribute: N | N["name"], dependency_signal: V | Accessor<V>, config?: DOMSignalConfig<N>): [id: number, dependOnAttr: Accessor<N>, attrNode: N] {
+		static create(attribute_node: Attr, dependency_signal: Stringifyable | PureAccessor<Stringifyable>, config?: DOMSignalConfig<Attr> & { value: never }): [id: number, dependOnAttr: PureAccessor<Attr>, attrNode: Attr]
+		static create(attribute_name: Attr["name"], dependency_signal: Stringifyable | PureAccessor<Stringifyable>, config?: DOMSignalConfig<Attr> & { value: never }): [id: number, dependOnAttr: PureAccessor<Attr>, attrNode: Attr]
+		static create<N extends Attr, V extends AttrValue = AttrValue>(attribute: N | N["name"], dependency_signal: V | PureAccessor<V>, config?: DOMSignalConfig<N>): [id: number, dependOnAttr: PureAccessor<N>, attrNode: N] {
 			const new_signal = new this<N, V>(attribute as any, dependency_signal, config as any)
 			return [
 				new_signal.id,
@@ -242,21 +242,21 @@ export const AttrSignal_Factory = (ctx: Context) => {
 // TODO: create an example and test this. moreover, maybe add it as an addon to your JSX runtime `h` function.
 export const HtmlNodeSignal_Factory = (ctx: Context) => {
 	return class HtmlNodeSignal<N extends HTMLElement, V extends HtmlInnerValue = HtmlInnerValue> extends ctx.getClass(DOMSignal_Factory)<N, V> {
-		declare fn: Accessor<V>
+		declare fn: PureAccessor<V>
 
 		constructor(
 			element: HTMLElement,
-			dependency_signal: HtmlInnerValue | Accessor<HtmlInnerValue>,
+			dependency_signal: HtmlInnerValue | PureAccessor<HtmlInnerValue>,
 			config?: Omit<DOMSignalConfig<N>, "value">,
 		)
 		constructor(
 			element_tag: HTMLElement["tagName"],
-			dependency_signal: HtmlInnerValue | Accessor<HtmlInnerValue>,
+			dependency_signal: HtmlInnerValue | PureAccessor<HtmlInnerValue>,
 			config?: Omit<DOMSignalConfig<N>, "value">,
 		)
 		constructor(
 			element: N | N["tagName"],
-			dependency_signal: V | Accessor<V>,
+			dependency_signal: V | PureAccessor<V>,
 			config?: Omit<DOMSignalConfig<N>, "value">,
 		) {
 			const element_node = typeof element === "string" ? document.createElement(element) as N : element
@@ -283,9 +283,9 @@ export const HtmlNodeSignal_Factory = (ctx: Context) => {
 			return (element.innerHTML = (is_null ? "" : new_value.toString()))
 		}
 
-		static create(element: HTMLElement, dependency_signal: HtmlInnerValue | Accessor<HtmlInnerValue>, config?: DOMSignalConfig<HTMLElement> & { value: never }): [id: number, dependOnElement: Accessor<HTMLElement>, elementNode: HTMLElement]
-		static create(element_tag: HTMLElement["tagName"], dependency_signal: HtmlInnerValue | Accessor<HtmlInnerValue>, config?: DOMSignalConfig<HTMLElement> & { value: never }): [id: number, dependOnElement: Accessor<HTMLElement>, elementNode: HTMLElement]
-		static create<N extends HTMLElement, V extends HtmlInnerValue = HtmlInnerValue>(element: N | N["tagName"], dependency_signal: V | Accessor<V>, config?: DOMSignalConfig<N>): [id: number, dependOnElement: Accessor<N>, elementNode: N] {
+		static create(element: HTMLElement, dependency_signal: HtmlInnerValue | PureAccessor<HtmlInnerValue>, config?: DOMSignalConfig<HTMLElement> & { value: never }): [id: number, dependOnElement: PureAccessor<HTMLElement>, elementNode: HTMLElement]
+		static create(element_tag: HTMLElement["tagName"], dependency_signal: HtmlInnerValue | PureAccessor<HtmlInnerValue>, config?: DOMSignalConfig<HTMLElement> & { value: never }): [id: number, dependOnElement: PureAccessor<HTMLElement>, elementNode: HTMLElement]
+		static create<N extends HTMLElement, V extends HtmlInnerValue = HtmlInnerValue>(element: N | N["tagName"], dependency_signal: V | PureAccessor<V>, config?: DOMSignalConfig<N>): [id: number, dependOnElement: PureAccessor<N>, elementNode: N] {
 			const new_signal = new this<N, V>(element as any, dependency_signal, config as any)
 			return [
 				new_signal.id,

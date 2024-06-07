@@ -2,6 +2,13 @@
  * @module
 */
 
+import type { Context } from "./context.ts"
+import type { EffectSignal_Factory, SimpleSignal_Factory, StateSignal_Factory } from "./signal.ts"
+
+type SimpleSignal = ReturnType<typeof SimpleSignal_Factory>
+type StateSignal = ReturnType<typeof StateSignal_Factory>
+type EffectSignal = ReturnType<typeof EffectSignal_Factory>
+
 /** type definition for a value equality check function. */
 export type EqualityFn<T> = (prev_value: T | undefined, new_value: T) => boolean
 
@@ -25,11 +32,50 @@ export type HASHED_IDS = number
 /** type definition for an incremental updater function. */
 export type Updater<T> = (prev_value?: T) => T
 
-/** type definition for a signal accessor (value getter) function. */
-export type Accessor<T> = ((observer_id?: TO_ID | UNTRACKED_ID) => T)
+/** type definition for a pure signal accessor (value getter) function. <br>
+ * it differs from the _actual_ returned {@link Accessor} type of a {@link SignalClass.create | signal create function}, in that it lacks the id information of its own signal. <br>
+ * use this version when annotating functions that do not read the id of dependency signals (quite common),
+ * otherwise opt out for {@link Accessor} if you do intend to read the ids of the dependency signals (common in dynamic signals, which can erase and add new dependencies cleanly).
+*/
+export type PureAccessor<T> = ((observer_id?: TO_ID | UNTRACKED_ID) => T)
 
-/** type definition for a signal value setter function. */
-export type Setter<T> = ((new_value: T | Updater<T>) => boolean)
+/** type definition for a signal value setter function. <br>
+ * it differs from the _actual_ returned {@link Setter} type of a {@link SignalClass.create | signal create function}, in that it lacks the id information of its own signal. <br>
+ * use this version when annotating signal value setters who's ids are not read (quite common),
+ * otherwise opt out for {@link Setter} if you do intend to read the id of the signal setter (seldom used in dynamic signals).
+*/
+export type PureSetter<T> = ((new_value: T | Updater<T>) => boolean)
+
+/** type definition for a signal accessor (value getter) function. <br>
+ * notice that it contains a custom `id` property assigned to it, so it is not just any anonymous function.
+ * to manually replicate it, you will also need to assign an `id` property to the replica anonymous function. <br>
+ * this type of accessor is what is returned by a {@link SignalClass.create | signal create function}, as opposed to {@link PureAccessor | pure accessor function}.
+ * 
+ * why would the `id` be needed? <br>
+ * often times, a dynamic-dependency signal (such as one that is an array of other accessors) needs to know the `id`s of its dependencies so that it can remove them later on, when they are no longer a dependency.
+*/
+export interface Accessor<T> extends PureAccessor<T> {
+	/** the id of the signal, from which this accessor originates from. <br>
+	 * this property is statically inherited from {@link Signal.id}, when the accessor function is created by a {@link SignalClass.create | signal create function}.
+	*/
+	id: ID
+}
+
+/** type definition for a signal setter (value getter) function. <br>
+ * notice that it contains a custom `id` property assigned to it, so it is not just any anonymous function.
+ * to manually replicate it, you will also need to assign an `id` property to the replica anonymous function. <br>
+ * this type of setter is what is returned by a {@link SignalClass.create | signal create function}, as opposed to {@link PureSetter | pure setter function}.
+ * 
+ * why would the `id` be needed? <br>
+ * good question. I don't know under what circumstances one would ever need this information.
+ * but for the sake of future proofing, and consistency with {@link Accessor}'s definition, the `id` is assigned as a property anyway.
+*/
+export interface Setter<T> extends PureSetter<T> {
+	/** the id of the signal, from which this setter originates from. <br>
+	 * this property is statically inherited from {@link Signal.id}, when the setter function is created by a {@link SignalClass.create | signal create function}.
+	*/
+	id: ID
+}
 
 /** type definition for an async signal value setter function. <br>
  * TODO: should an `AsyncSetter<T>` return a `Promise<T>` ? or should it return a `Promise<boolean>`, which should tell whether or not the value has changed (i.e. `!signal.equal(old_value, new_value)`)
@@ -41,7 +87,7 @@ export type AsyncSetter<T> = (
 	rejectable?: boolean,
 ) => Promise<T>
 
-/** type definition for when a signal's _update_ function `run` is called by the signal update propagator `propagateSignalUpdate` inside of {@link context!Context}. <br>
+/** type definition for when a signal's _update_ function `run` is called by the signal update propagator `propagateSignalUpdate` inside of {@link Context}. <br>
  * the return value should indicate whether this signal has:
  * - updated ({@link SignalUpdateStatus.UPDATED} === 1), and therefore propagate to its observers to also run
  * - unchanged ({@link SignalUpdateStatus.UNCHANGED} === 0), and therefore not propagate to its observers
@@ -51,7 +97,7 @@ export type Runner = () => SignalUpdateStatus
 
 /** the abstraction that defines what a signal is. */
 export interface Signal<T> {
-	/** id of this signal in the {@link context!Context} in which it exists. */
+	/** id of this signal in the {@link Context} in which it exists. */
 	id: number
 
 	/** runtime-id of this signal. <br>
@@ -66,7 +112,7 @@ export interface Signal<T> {
 
 	/** get the value of this signal, and handle any observing signal's id ({@link observer_id}). <br>
 	 * typically, when `observer_id` is non-zero, this signal should handle it by registering it as an
-	 * observer through the use of the context's {@link context!Context.addEdge} method.
+	 * observer through the use of the context's {@link Context.addEdge} method.
 	 * 
 	 * @example
 	 * ```ts
@@ -92,8 +138,8 @@ export interface Signal<T> {
 	 * however, the returning value must always be a `boolean` describing whether or not this signal's value has changed compared to its previous value. <br>
 	 * what makes use of the returned value again greatly varies from signal to signal.
 	 * but it is typically used by the {@link run} method to decide whether or not this signal should propagate. <br>
-	 * another purpose of the set method is typically to _initiate_ the ignition of an update cycle in a context, bu using {@link context!Context.runId}.
-	 * this is how {@link signal!StateSignal}s and {@link signal!EffectSignal}s begin an update cycle when their values have changed from the prior value.
+	 * another purpose of the set method is typically to _initiate_ the ignition of an update cycle in a context, bu using {@link Context.runId}.
+	 * this is how {@link StateSignal}s and {@link EffectSignal}s begin an update cycle when their values have changed from the prior value.
 	 * 
 	 * @example
 	 * ```ts
@@ -133,7 +179,7 @@ export interface Signal<T> {
 	 * 
 	 * this method may also accept an optional `forced` parameter, which tells the signal that it is
 	 * being _forced_ to run, even though none of its dependency signals have been executed or changed.
-	 * this information is useful when coding for signals that _can_ be fired independently, such as {@link signal!StateSignal} or {@link signal!EffectSignal}.
+	 * this information is useful when coding for signals that _can_ be fired independently, such as {@link StateSignal} or {@link EffectSignal}.
 	 * 
 	 * @param forced was this signal _forced_ to run independently?
 	 * @returns the update status of this signal, specifying whether or not it has changed, or if it has been aborted
@@ -147,7 +193,7 @@ export interface Signal<T> {
 	*/
 	postrun?(): void
 
-	/** a utility method defined in {@link signal!SimpleSignal}, which allows one to bind a certain method (by name) to _this_ instance of a signal,
+	/** a utility method defined in {@link SimpleSignal}, which allows one to bind a certain method (by name) to _this_ instance of a signal,
 	 * and therefore make that method freeable/seperable from _this_ signal. <br>
 	 * this method is used by all signal classes's static {@link SignalClass.create} method, which is supposed to construct a signal in
 	 * a fashion similar to SolidJS, and return an array containing important control functions of the created signal.
@@ -163,7 +209,7 @@ export interface SignalClass {
 }
 
 /** the numbers used for relaying the status of a signal after it has been _ran_ via its {@link Signal.run | `run method`}. <br>
- * these numbers convey the following instructions to the context's topological update cycle {@link context!Context.propagateSignalUpdate}:
+ * these numbers convey the following instructions to the context's topological update cycle {@link Context.propagateSignalUpdate}:
  * - ` 1`: this signal's value has been updated, and therefore its observers should be updated too.
  * - ` 0`: this signal's value has not changed, and therefore its observers should be _not_ be updated.
  *   do note that an observer signal will still run if some _other_ of its dependency signal did update this cycle (i.e. had a status value of `1`)
