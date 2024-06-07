@@ -3,10 +3,11 @@
  * @module
 */
 
-import { Context } from "./context.ts"
+import type { Context } from "./context.ts"
 import { Stringifyable, isFunction, isPrimitive, symbol_iterator } from "./deps.ts"
 import { MemoSignalConfig, SimpleSignal_Factory } from "./signal.ts"
-import { PureAccessor, SignalUpdateStatus, TO_ID, UNTRACKED_ID } from "./typedefs.ts"
+import type { Accessor, PureAccessor, TO_ID, UNTRACKED_ID } from "./typedefs.ts"
+import { SignalUpdateStatus } from "./typedefs.ts"
 
 
 export type NodeValue = Stringifyable | null // Node["nodeValue"]
@@ -158,7 +159,7 @@ export const TextNodeSignal_Factory = (ctx: Context) => {
 		// TODO: in the `set` method, think whether or not we should remove the text node if the new value is null.
 		// if yes, then you should override the `this.setNodeValue` method, and call the `this.detach` method in there if the null value condition is met.
 
-		static create<N extends Text, V extends NodeValue = NodeValue>(dependency_signal: V | PureAccessor<V>, config?: DOMSignalConfig<N>): [id: number, dependOnText: PureAccessor<N>, textNode: Text] {
+		static create<N extends Text, V extends NodeValue = NodeValue>(dependency_signal: V | PureAccessor<V>, config?: DOMSignalConfig<N>): [id: number, dependOnText: Accessor<N>, textNode: Text] {
 			const new_signal = new this<N, V>(dependency_signal, config)
 			return [
 				new_signal.id,
@@ -226,9 +227,9 @@ export const AttrSignal_Factory = (ctx: Context) => {
 			return super.setNodeValue(new_value)
 		}
 
-		static create(attribute_node: Attr, dependency_signal: Stringifyable | PureAccessor<Stringifyable>, config?: DOMSignalConfig<Attr> & { value: never }): [id: number, dependOnAttr: PureAccessor<Attr>, attrNode: Attr]
-		static create(attribute_name: Attr["name"], dependency_signal: Stringifyable | PureAccessor<Stringifyable>, config?: DOMSignalConfig<Attr> & { value: never }): [id: number, dependOnAttr: PureAccessor<Attr>, attrNode: Attr]
-		static create<N extends Attr, V extends AttrValue = AttrValue>(attribute: N | N["name"], dependency_signal: V | PureAccessor<V>, config?: DOMSignalConfig<N>): [id: number, dependOnAttr: PureAccessor<N>, attrNode: N] {
+		static create(attribute_node: Attr, dependency_signal: Stringifyable | PureAccessor<Stringifyable>, config?: DOMSignalConfig<Attr> & { value: never }): [id: number, dependOnAttr: Accessor<Attr>, attrNode: Attr]
+		static create(attribute_name: Attr["name"], dependency_signal: Stringifyable | PureAccessor<Stringifyable>, config?: DOMSignalConfig<Attr> & { value: never }): [id: number, dependOnAttr: Accessor<Attr>, attrNode: Attr]
+		static create<N extends Attr, V extends AttrValue = AttrValue>(attribute: N | N["name"], dependency_signal: V | PureAccessor<V>, config?: DOMSignalConfig<N>): [id: number, dependOnAttr: Accessor<N>, attrNode: N] {
 			const new_signal = new this<N, V>(attribute as any, dependency_signal, config as any)
 			return [
 				new_signal.id,
@@ -283,9 +284,9 @@ export const HtmlNodeSignal_Factory = (ctx: Context) => {
 			return (element.innerHTML = (is_null ? "" : new_value.toString()))
 		}
 
-		static create(element: HTMLElement, dependency_signal: HtmlInnerValue | PureAccessor<HtmlInnerValue>, config?: DOMSignalConfig<HTMLElement> & { value: never }): [id: number, dependOnElement: PureAccessor<HTMLElement>, elementNode: HTMLElement]
-		static create(element_tag: HTMLElement["tagName"], dependency_signal: HtmlInnerValue | PureAccessor<HtmlInnerValue>, config?: DOMSignalConfig<HTMLElement> & { value: never }): [id: number, dependOnElement: PureAccessor<HTMLElement>, elementNode: HTMLElement]
-		static create<N extends HTMLElement, V extends HtmlInnerValue = HtmlInnerValue>(element: N | N["tagName"], dependency_signal: V | PureAccessor<V>, config?: DOMSignalConfig<N>): [id: number, dependOnElement: PureAccessor<N>, elementNode: N] {
+		static create(element: HTMLElement, dependency_signal: HtmlInnerValue | PureAccessor<HtmlInnerValue>, config?: DOMSignalConfig<HTMLElement> & { value: never }): [id: number, dependOnElement: Accessor<HTMLElement>, elementNode: HTMLElement]
+		static create(element_tag: HTMLElement["tagName"], dependency_signal: HtmlInnerValue | PureAccessor<HtmlInnerValue>, config?: DOMSignalConfig<HTMLElement> & { value: never }): [id: number, dependOnElement: Accessor<HTMLElement>, elementNode: HTMLElement]
+		static create<N extends HTMLElement, V extends HtmlInnerValue = HtmlInnerValue>(element: N | N["tagName"], dependency_signal: V | PureAccessor<V>, config?: DOMSignalConfig<N>): [id: number, dependOnElement: Accessor<N>, elementNode: N] {
 			const new_signal = new this<N, V>(element as any, dependency_signal, config as any)
 			return [
 				new_signal.id,

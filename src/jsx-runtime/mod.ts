@@ -67,10 +67,10 @@
 */
 
 
-import { Context } from "../context.ts"
+import type { Context } from "../context.ts"
 import { Stringifyable, array_isArray, bind_array_pop, bind_array_push, bind_stack_seek, isFunction, object_entries } from "../deps.ts"
 import { AttrSignal_Factory, TextNodeSignal_Factory } from "../dom_signal.ts"
-import { PureAccessor } from "../typedefs.ts"
+import type { PureAccessor } from "../typedefs.ts"
 
 // TODO: convert this to a standalone package named "hyperscope", in which:
 // - I will implement a JSX runtime that has different scopes of behaviors, defined by the end user.
