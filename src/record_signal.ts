@@ -5,7 +5,7 @@
 import type { Context } from "./context.ts"
 import { array_isArray, isFunction, object_keys, object_values } from "./deps.ts"
 import { SimpleSignal_Factory } from "./signal.ts"
-import type { EqualityCheck, EqualityFn, ID, PureAccessor, PureSetter, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.ts"
+import type { Accessor, EqualityCheck, EqualityFn, ID, Identifiable, PureSetter, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.ts"
 import { SignalUpdateStatus } from "./typedefs.ts"
 
 // TODO: implement the following kinds of signals: `DictState` (or just `Dict`), `ListState` (or just `List`), `DictMemo`, and `ListMemo`
@@ -148,11 +148,11 @@ export const RecordStateSignal_Factory = (ctx: Context) => {
 			config?: RecordSignalConfig<K, V>
 		): [
 				idRecord: ID,
-				getDeltaRecord: PureAccessor<[record: Record<K, V>, ...changed_keys: K[]]>,
-				setRecord: (key: K, new_value: V | Updater<V>, ignore?: boolean) => boolean,
-				setRecords: (keys: K[], values: (V | Updater<V>)[], ignore?: boolean) => boolean,
-				deleteRecord: (key: K, ignore?: boolean) => boolean,
-				deleteRecords: (keys: K[], ignore?: boolean) => boolean,
+				getDeltaRecord: Accessor<[record: Record<K, V>, ...changed_keys: K[]]>,
+				setRecord: Identifiable<(key: K, new_value: V | Updater<V>, ignore?: boolean) => boolean>,
+				setRecords: Identifiable<(keys: K[], values: (V | Updater<V>)[], ignore?: boolean) => boolean>,
+				deleteRecord: Identifiable<(key: K, ignore?: boolean) => boolean>,
+				deleteRecords: Identifiable<(keys: K[], ignore?: boolean) => boolean>,
 			] {
 			const new_signal = new this<K, V>(base_record, config)
 			return [
@@ -204,7 +204,7 @@ export const RecordMemoSignal_Factory = (ctx: Context) => {
 			config?: RecordMemoSignalConfig<K, V>
 		): [
 				idRecord: ID,
-				getDeltaRecord: PureAccessor<[record: Record<K, V>, ...changed_keys: K[]]>,
+				getDeltaRecord: Accessor<[record: Record<K, V>, ...changed_keys: K[]]>,
 			] {
 			const new_signal = new this<K, V>(fn, config)
 			return [

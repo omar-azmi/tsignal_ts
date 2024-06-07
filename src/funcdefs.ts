@@ -3,9 +3,9 @@
 */
 
 import type { Context } from "./context.ts"
-import { DEBUG, THROTTLE_REJECT, noop, throttle } from "./deps.ts"
+import { DEBUG, THROTTLE_REJECT, noop, object_assign, throttle } from "./deps.ts"
 import type { SimpleSignalConfig } from "./signal.ts"
-import type { EqualityCheck, EqualityFn, FROM_ID, HASHED_IDS, ID, Signal, TO_ID, UNTRACKED_ID } from "./typedefs.ts"
+import type { EqualityCheck, EqualityFn, FROM_ID, HASHED_IDS, ID, Identifiable, Signal, TO_ID, UNTRACKED_ID } from "./typedefs.ts"
 
 /** test if `value1 === value2` */
 export const default_equality = (<T>(v1: T, v2: T) => (v1 === v2)) satisfies EqualityFn<any>
@@ -59,6 +59,13 @@ export const throttlingEquals = <T>(delta_time_ms: number, base_equals?: Equalit
 export const hash_ids = (ids: ID[]): HASHED_IDS => {
 	const sqrt_len = ids.length ** 0.5
 	return ids.reduce((sum, id) => sum + id * (id + sqrt_len), 0)
+}
+
+/** assign the member `id` to a function `fn`.
+ * this functionality is utilized by {@link Accessor}s and {@link Setters}s, when they are being created by a {@link SignalClass.create | create signal function}.
+*/
+export const assign_id = <F>(id: ID, fn: F): Identifiable<F> => {
+	return object_assign(fn as Identifiable<F>, { id })
 }
 
 /** TODO: add to `kitchensink_ts` if important, then cleanup */

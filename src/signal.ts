@@ -2,10 +2,11 @@
  * @module
 */
 
-import { Context } from "./context.ts"
-import { DEBUG, StaticImplements, bindMethodToSelfByName, isFunction } from "./deps.ts"
-import { log_get_request, parseEquality } from "./funcdefs.ts"
-import { PureAccessor, EqualityCheck, EqualityFn, ID, PureSetter, Signal, SignalClass, SignalUpdateStatus, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.ts"
+import type { Context } from "./context.ts"
+import { DEBUG, bindMethodToSelfByName, isFunction, type StaticImplements } from "./deps.ts"
+import { assign_id, log_get_request, parseEquality } from "./funcdefs.ts"
+import type { Accessor, EqualityCheck, EqualityFn, ID, Identifiable, PureSetter, Setter, Signal, SignalClass, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.ts"
+import { SignalUpdateStatus } from "./typedefs.ts"
 
 // TODO: add `SimpleSignalConfig.deps: ID[]` option to manually enforce dependance on certain signal ids. this can be useful when you want a
 //       signal to defer its first run, yet you also want that signal to react to any of its dependencies, before this signal ever gets run.
@@ -108,8 +109,12 @@ export const SimpleSignal_Factory = (ctx: Context) => {
 				SignalUpdateStatus.UNCHANGED
 		}
 
-		bindMethod<M extends keyof this>(method_name: M): this[M] {
-			return bindMethodToSelfByName(this as any, method_name) as this[M]
+		/** create an anonymous function that is bound to the provided `method_name`, in addition to assigning this signal's `id` to it. */
+		bindMethod<M extends keyof this>(method_name: M): Identifiable<this[M]> {
+			return assign_id(
+				this.id,
+				bindMethodToSelfByName(this as any, method_name) as this[M]
+			)
 		}
 
 		static create<T>(...args: any[]): [id: ID, ...any[]] {
@@ -146,7 +151,7 @@ export const StateSignal_Factory = (ctx: Context) => {
 			return false
 		}
 
-		static create<T>(value: T, config?: SimpleSignalConfig<T>): [idState: ID, getState: PureAccessor<T>, setState: PureSetter<T>] {
+		static create<T>(value: T, config?: SimpleSignalConfig<T>): [idState: ID, getState: Accessor<T>, setState: Setter<T>] {
 			const new_signal = new this(value, config)
 			return [
 				new_signal.id,
@@ -194,7 +199,7 @@ export const MemoSignal_Factory = (ctx: Context) => {
 				SignalUpdateStatus.UNCHANGED
 		}
 
-		static create<T>(fn: MemoFn<T>, config?: MemoSignalConfig<T>): [idMemo: ID, getMemo: PureAccessor<T>] {
+		static create<T>(fn: MemoFn<T>, config?: MemoSignalConfig<T>): [idMemo: ID, getMemo: Accessor<T>] {
 			const new_signal = new this(fn, config)
 			return [
 				new_signal.id,
@@ -249,7 +254,7 @@ export const LazySignal_Factory = (ctx: Context) => {
 			return super.get(observer_id)
 		}
 
-		static create<T>(fn: MemoFn<T>, config?: MemoSignalConfig<T>): [idLazy: ID, getLazy: PureAccessor<T>] {
+		static create<T>(fn: MemoFn<T>, config?: MemoSignalConfig<T>): [idLazy: ID, getLazy: Accessor<T>] {
 			const new_signal = new this(fn, config)
 			return [
 				new_signal.id,
@@ -270,7 +275,10 @@ export type EffectFn = (observer_id: TO_ID | UNTRACKED_ID) => void | undefined |
  * the return value is `true` if the effect is ran and propagated immediately,
  * or `false` if it did not fire immediately because of some form of batching stopped it from doing so.
 */
-export type EffectEmitter = () => boolean
+export type PureEffectEmitter = () => boolean
+
+/** see {@link PureEffectEmitter} for more information. */
+export interface EffectEmitter extends Identifiable<PureEffectEmitter> { }
 
 /** extremely similar to {@link MemoSignal_Factory | `MemoSignal`}, but without a value to output, and also has the ability to fire on its own.
  * TODO-DOC: explain more
@@ -319,7 +327,7 @@ export const EffectSignal_Factory = (ctx: Context) => {
 				SignalUpdateStatus.UNCHANGED
 		}
 
-		static create(fn: EffectFn, config?: SimpleSignalConfig<void>): [idEffect: ID, dependOnEffect: PureAccessor<void>, fireEffect: EffectEmitter] {
+		static create(fn: EffectFn, config?: SimpleSignalConfig<void>): [idEffect: ID, dependOnEffect: Accessor<void>, fireEffect: EffectEmitter] {
 			const new_signal = new this(fn, config)
 			return [
 				new_signal.id,
