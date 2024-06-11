@@ -193,6 +193,14 @@ export const MemoSignal_Factory = (ctx: Context) => {
 		}
 
 		// TODO: consider whether or not MemoSignals should be able to be forced to fire independently
+		//       [20240611]: in order to allow derived classes to fire independently, it would be best if we _do_ allow the `forced` parameter to take action.
+		//                   so, as of now, it will take effect.
+		//                   However, I need to document this feature properly now, in addition to changing the signature to allow for a "fireMemo()" forcefull setter-like function.
+		//                   Moreover, I will need to consider the consequences on the existing derived classes, such as the `LazySignal`.
+		// UPDATE: nevermind, I will retract the comments above soon, and will not currently implement forced memo signals, as it will create ambiguity in the following regard:
+		//         when the signal is forced, it will certainly always ultimately propagate (via `SignalUpdateStatus.UPDATED`), but:
+		//         - will it update its current value (via `super.set(this.fn(this.rid))`)
+		//         - or will it skip rerunning the `fn` function and skip setting `this.value`
 		run(forced?: boolean): SignalUpdateStatus {
 			return super.set(this.fn(this.rid)) ?
 				SignalUpdateStatus.UPDATED :
