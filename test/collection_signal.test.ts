@@ -1,5 +1,5 @@
 
-import { UnisetStateSignal_Factory } from "../src/collection_signal.ts"
+import { UnisetSignal_Factory } from "../src/collection_signal.ts"
 import { Context } from "../src/context.ts"
 import { EffectSignal_Factory, MemoSignal_Factory, StateSignal_Factory } from "../src/signal.ts"
 
@@ -17,7 +17,7 @@ const
 	createState = ctx.addClass(StateSignal_Factory),
 	createMemo = ctx.addClass(MemoSignal_Factory),
 	createEffect = ctx.addClass(EffectSignal_Factory),
-	createUniset = ctx.addClass(UnisetStateSignal_Factory)
+	createUniset = ctx.addClass(UnisetSignal_Factory)
 
 const
 	[idBookA, getBookA, setBookA] = createState<BookMeta>({
@@ -53,13 +53,13 @@ const
 	})
 
 Deno.test("test1", () => {
-	const [idBooksUniset, getBooksUniset, addBooks, delBooks] = createUniset([getBookD, getBookA])
+	const [idBooksUniset, getBooksUniset, books] = createUniset([getBookD, getBookA])
 	createEffect((id) => {
 		const all_books = getBooksUniset(id)
 		console.log(all_books)
 	}, { defer: false })
 	// adding pre-existing items should not rerun the signal.
-	addBooks(getBookA, getBookD)
+	books.addItems(getBookA, getBookD)
 	// updating `setBookA` should ultimately update `BooksUniset`, and make the logging effect afterwards.
 	setBookA((prev) => {
 		prev!.author = "1st author"
@@ -68,8 +68,8 @@ Deno.test("test1", () => {
 	// removing pre-existing items should rerun the signal.
 	// TODO: investigate why deletion and addition of items does not cause the signal to rerun. could it have something to do with the `this.run` code? 
 	// scratch the above, it now works, because I should've used `ctx.runId` instead of `this.run`
-	delBooks(getBookA)
-	delBooks(getBookD)
+	books.delete(getBookA)
+	books.delete(getBookD)
 	// now, updating `setBookA` will not rerun/update `BooksUniset`, since it is no longer dependent (whether directly, or indirectly) in signals `getBookA` and `getBookD`.
 	setBookA((prev) => {
 		prev!.author = "nein-th author"
