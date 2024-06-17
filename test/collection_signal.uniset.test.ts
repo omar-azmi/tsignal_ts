@@ -46,7 +46,7 @@ const
 	[idBookE, getBookE] = createMemo<BookMeta>((id) => {
 		// BookE is derived from BookA, BookC, and BookD
 		const
-			title = getBookA(id).title + ", edition D",
+			title = getBookA(id).title + ", edition E",
 			{ published } = getBookC(id),
 			{ author } = getBookD(id)
 		return { title, author, published }
@@ -75,6 +75,12 @@ Deno.test("test1", () => {
 		prev!.author = "nein-th author"
 		return prev!
 	})
+	// adding `getBookE`, which has a dependency on `getBookA`. due to the mutation, the `getBooksUniset` will fire on its own.
+	books.add(getBookE)
+	// now, updating `setBookA` will update `BooksUniset`, since it updates `BookE`, which will then update `BooksUniset` (indirectly).
+	setBookA((prev) => {
+		prev!.author = "not an author"
+		return prev!
+	})
 	console.log(getBooksUniset())
 })
-
