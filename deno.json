@@ -1,6 +1,6 @@
 {
 	"name": "@oazmi/tsignal",
-	"version": "0.3.2",
+	"version": "0.4.0",
 	"description": "a topological order respecting signals library inspired by SolidJS",
 	"author": "Omar Azmi",
 	"license": "Anti-Competition License",
@@ -14,6 +14,7 @@
 	"exports": {
 		".": "./src/mod.ts",
 		"./async_signal": "./src/async_signal.ts",
+		"./collection_signal": "./src/collection_signal.ts",
 		"./context": "./src/context.ts",
 		"./funcdefs": "./src/funcdefs.ts",
 		"./record_signal": "./src/record_signal.ts",
