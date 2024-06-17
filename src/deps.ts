@@ -30,7 +30,7 @@ export type Stringifyable = { toString(): string }
 // TODO: import the following from the newer version of `kitchensink`
 import { bind_map_delete, bind_map_get, bind_map_set } from "jsr:@oazmi/kitchensink@0.7.5/binder"
 import { array_from } from "jsr:@oazmi/kitchensink@0.7.5/builtin_aliases_deps"
-import { modulo } from "jsr:@oazmi/kitchensink@0.7.5/numericmethods"
+import { max, modulo } from "jsr:@oazmi/kitchensink@0.7.5/numericmethods"
 
 
 /** a very simple python-like `List`s class, that allows for in-between insertions, deletions, and replacements, to keep the list compact. */
@@ -47,7 +47,7 @@ export class List<T> extends Array<T> {
 	 * ```
 	*/
 	insert(index: number, item: T): void {
-		const i = modulo(index, this.length)
+		const i = modulo(index, this.length) + (index < 0 ? 1 : 0)
 		this.splice(i, 0, item)
 	}
 
@@ -65,6 +65,39 @@ export class List<T> extends Array<T> {
 	delete(index: number): T | undefined {
 		return this.splice(index, 1)[0]
 	}
+
+	/** swap the position of two items by their index. <br>
+	 * if any of the two indices is out of bound, then appropriate number of _empty_ elements will be created to fill the gap;
+	 * similar to how index-based assignment works (i.e. `my_list[off_bound_index] = "something"` will increase `my_list`'s length).
+	*/
+	swap(index1: number, index2: number): void {
+		// destructured assignment at an array index is possible. see "https://stackoverflow.com/a/14881632".
+		[this[index2], this[index1]] = [this[index1], this[index2]]
+	}
+
+	/** the `map` array method needs to have its signature corrected, because apparently, javascript internally creates a new instance of `this`, instead of a new instance of an `Array`.
+	 * the signature of the map method in typescript is misleading, because:
+	 * - it suggests:      `map<U>(callbackfn: (value: T, index: number, array: T[]) => U, thisArg?: any): U[]`
+	 * - but in actuality: `map<U>(callbackfn: (value: T, index: number, array: typeof this<T>) => U, thisArg?: any): typeof this<U>`
+	 * 
+	 * meaning that in our case, `array` is of type `List<T>` (or a subclass thereof), and the return value is also `List<U>` (or a subclass) instead of `Array<U>`. <br>
+	 * in addition, it also means that a _new_ instance of this collection (`List`) is created, in order to fill it with the return output. <br>
+	 * this is perhaps the desired behavior for many uses, but for my specific use of "reference counting" and "list-like collection of signals",
+	 * this feature does not bode well, as I need to be able to account for each and every single instance.
+	 * surprise instances of this class are not welcomed, since it would introduce dead dependencies in my "directed acyclic graphs" for signals.
+	*/
+	map<U>(callbackfn: (value: T, index: number, array: typeof this) => U, thisArg?: any): List<U> { return super.map(callbackfn as any, thisArg) as any }
+
+	/** see the comment on {@link map} to understand why the signature of this function needs to be corrected from the standard typescript definition. */
+	flatMap<U, This = undefined>(callback: (this: This, value: T, index: number, array: typeof this) => U | readonly U[], thisArg?: This | undefined): List<U> {
+		return super.flatMap(callback as any, thisArg) as any
+	}
+
+	/** see the comment on {@link map} to understand the necessity for this method, instead of the builtin array `map` method. */
+	mapToArray<U>(callbackfn: (value: T, index: number, array: T[]) => U, thisArg?: any): U[] { return [...this].map(callbackfn, thisArg) }
+
+	/** see the comment on {@link map} to understand the necessity for this method, instead of the builtin array `flatMap` method. */
+	flatMapToArray<U>(callbackfn: (value: T, index: number, array: T[]) => U, thisArg?: any): U[] { return [...this].flatMap(callbackfn, thisArg) }
 
 	/** get an item at the specified `index`. <br>
 	 * this is equivalent to using index-based getter: `my_list[index]`.
@@ -201,8 +234,9 @@ export class RcList<T> extends List<T> {
 	}
 
 	push(...items: T[]): number {
+		const return_value = super.push(...items)
 		this.incRcs(...items)
-		return super.push(...items)
+		return return_value
 	}
 
 	pop(): T | undefined {
@@ -222,8 +256,9 @@ export class RcList<T> extends List<T> {
 	}
 
 	unshift(...items: T[]): number {
+		const return_value = super.unshift(...items)
 		this.incRcs(...items)
-		return super.unshift(...items)
+		return return_value
 	}
 
 	splice(start: number, deleteCount?: number, ...items: T[]): T[] {
@@ -231,6 +266,15 @@ export class RcList<T> extends List<T> {
 		this.incRcs(...items)
 		this.decRcs(...removed_items)
 		return removed_items
+	}
+
+	swap(index1: number, index2: number): void {
+		const max_index = max(index1, index2)
+		if (max_index >= this.length) {
+			// run the `this.set` method to extend the array, while reference counting the new gap filling insertions (of `undefined` elements).
+			this.set(max_index, undefined as T)
+		}
+		super.swap(index1, index2)
 	}
 
 	/** sets the value at the specified index, updating the counter accordingly. <br>
