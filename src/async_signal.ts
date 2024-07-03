@@ -2,10 +2,11 @@
  * @module
 */
 
-import { Context } from "./context.ts"
+import type { Context } from "./context.ts"
 import { isFunction, promise_forever, promise_reject, promise_resolve } from "./deps.ts"
 import { SimpleSignalConfig, SimpleSignal_Factory } from "./signal.ts"
-import { Accessor, AsyncSetter, ID, SignalUpdateStatus, Updater } from "./typedefs.ts"
+import type { Accessor, AsyncSetter, ID, Updater } from "./typedefs.ts"
+import { SignalUpdateStatus } from "./typedefs.ts"
 
 export const AsyncStateSignal_Factory = (ctx: Context) => {
 	const runId = ctx.runId

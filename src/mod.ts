@@ -3,6 +3,8 @@
 */
 
 export { AsyncStateSignal_Factory } from "./async_signal.ts"
+export { CollectionSignal_Factory, ListCollection, ListSignal_Factory, UnisetCollection, UnisetSignal_Factory } from "./collection_signal.ts"
+export type { CollectionSignalConfig } from "./collection_signal.ts"
 export { Context } from "./context.ts"
 export type { Context_Batch, Context_Dynamic } from "./context.ts"
 export { default_equality, falsey_equality, throttlingEquals } from "./funcdefs.ts"

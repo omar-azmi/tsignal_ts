@@ -2,10 +2,11 @@
  * @module
 */
 
-import { Context } from "./context.ts"
-import { DEBUG, StaticImplements, bindMethodToSelfByName, isFunction } from "./deps.ts"
-import { log_get_request, parseEquality } from "./funcdefs.ts"
-import { Accessor, EqualityCheck, EqualityFn, ID, Setter, Signal, SignalClass, SignalUpdateStatus, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.ts"
+import type { Context } from "./context.ts"
+import { DEBUG, bindMethodToSelfByName, isFunction, type StaticImplements } from "./deps.ts"
+import { assign_id, log_get_request, parseEquality } from "./funcdefs.ts"
+import type { Accessor, EqualityCheck, EqualityFn, ID, Identifiable, PureSetter, Setter, Signal, SignalClass, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.ts"
+import { SignalUpdateStatus } from "./typedefs.ts"
 
 // TODO: add `SimpleSignalConfig.deps: ID[]` option to manually enforce dependance on certain signal ids. this can be useful when you want a
 //       signal to defer its first run, yet you also want that signal to react to any of its dependencies, before this signal ever gets run.
@@ -20,7 +21,7 @@ export interface SimpleSignalConfig<T> {
 	/** give a name to the signal for debugging purposes */
 	name?: string
 
-	/** when a signal's value is updated (either through a {@link Setter}, or a change in the value of a dependency signal in the case of a memo),
+	/** when a signal's value is updated (either through a {@link PureSetter}, or a change in the value of a dependency signal in the case of a memo),
 	 * then the dependants/observers of THIS signal will only be notified if the equality check function evaluates to a `false`. <br>
 	 * see {@link EqualityCheck} to see its function signature and default behavior when left `undefined`
 	*/
@@ -108,8 +109,12 @@ export const SimpleSignal_Factory = (ctx: Context) => {
 				SignalUpdateStatus.UNCHANGED
 		}
 
-		bindMethod<M extends keyof this>(method_name: M): this[M] {
-			return bindMethodToSelfByName(this as any, method_name) as this[M]
+		/** create an anonymous function that is bound to the provided `method_name`, in addition to assigning this signal's `id` to it. */
+		bindMethod<M extends keyof this>(method_name: M): Identifiable<this[M]> {
+			return assign_id(
+				this.id,
+				bindMethodToSelfByName(this as any, method_name) as this[M]
+			)
 		}
 
 		static create<T>(...args: any[]): [id: ID, ...any[]] {
@@ -188,6 +193,14 @@ export const MemoSignal_Factory = (ctx: Context) => {
 		}
 
 		// TODO: consider whether or not MemoSignals should be able to be forced to fire independently
+		//       [20240611]: in order to allow derived classes to fire independently, it would be best if we _do_ allow the `forced` parameter to take action.
+		//                   so, as of now, it will take effect.
+		//                   However, I need to document this feature properly now, in addition to changing the signature to allow for a "fireMemo()" forcefull setter-like function.
+		//                   Moreover, I will need to consider the consequences on the existing derived classes, such as the `LazySignal`.
+		// UPDATE: nevermind, I will retract the comments above soon, and will not currently implement forced memo signals, as it will create ambiguity in the following regard:
+		//         when the signal is forced, it will certainly always ultimately propagate (via `SignalUpdateStatus.UPDATED`), but:
+		//         - will it update its current value (via `super.set(this.fn(this.rid))`)
+		//         - or will it skip rerunning the `fn` function and skip setting `this.value`
 		run(forced?: boolean): SignalUpdateStatus {
 			return super.set(this.fn(this.rid)) ?
 				SignalUpdateStatus.UPDATED :
@@ -270,7 +283,10 @@ export type EffectFn = (observer_id: TO_ID | UNTRACKED_ID) => void | undefined |
  * the return value is `true` if the effect is ran and propagated immediately,
  * or `false` if it did not fire immediately because of some form of batching stopped it from doing so.
 */
-export type EffectEmitter = () => boolean
+export type PureEffectEmitter = () => boolean
+
+/** see {@link PureEffectEmitter} for more information. */
+export interface EffectEmitter extends Identifiable<PureEffectEmitter> { }
 
 /** extremely similar to {@link MemoSignal_Factory | `MemoSignal`}, but without a value to output, and also has the ability to fire on its own.
  * TODO-DOC: explain more

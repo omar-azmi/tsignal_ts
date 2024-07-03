@@ -51,6 +51,8 @@ var bind_set_has = /* @__PURE__ */ bindMethodFactoryByName(set_proto, "has");
 var bind_map_clear = /* @__PURE__ */ bindMethodFactoryByName(map_proto, "clear"), bind_map_delete = /* @__PURE__ */ bindMethodFactoryByName(map_proto, "delete");
 var bind_map_get = /* @__PURE__ */ bindMethodFactoryByName(map_proto, "get");
 var bind_map_set = /* @__PURE__ */ bindMethodFactoryByName(map_proto, "set");
+var modulo = (value, mod) => (value % mod + mod) % mod;
+var max = (v0, v1) => v0 > v1 ? v0 : v1;
 var TREE_VALUE_UNSET = /* @__PURE__ */ Symbol(1);
 var THROTTLE_REJECT = /* @__PURE__ */ Symbol(1), TIMEOUT = /* @__PURE__ */ Symbol(1);
 var throttle = (delta_time_ms, fn) => {
@@ -59,6 +61,184 @@ var throttle = (delta_time_ms, fn) => {
     let time_now = date_now();
     return time_now - last_call > delta_time_ms ? (last_call = time_now, fn(...args)) : THROTTLE_REJECT;
   };
+};
+var List = class extends Array {
+  /** inserts an item at the specified index, shifting all items ahead of it one position to the front. <br>
+   * negative indices are also supported for indicating the position of the newly added item _after_ the array's length has incremented.
+   * 
+   * @example
+   * ```ts
+   * const arr = new List(0, 1, 2, 3, 4)
+   * arr.insert(-1, 5) // === [0, 1, 2, 3, 4, 5] // similar to pushing
+   * arr.insert(-2, 4.5) // === [0, 1, 2, 3, 4, 4.5, 5]
+   * arr.insert(1, 0.5) // === [0, 0.5, 1, 2, 3, 4, 4.5, 5]
+   * ```
+  */
+  insert(index, item) {
+    let i = modulo(index, this.length) + (index < 0 ? 1 : 0);
+    this.splice(i, 0, item);
+  }
+  /** deletes an item at the specified index, shifting all items ahead of it one position to the back. <br>
+   * negative indices are also supported for indicating the deletion index from the end of the array.
+   * 
+   * @example
+   * ```ts
+   * const arr = new List(0, 0.5, 1, 2, 3, 4, 4.5, 5)
+   * arr.delete(-1) // === [0, 0.5, 1, 2, 3, 4, 4.5] // similar to popping
+   * arr.delete(-2) // === [0, 0.5, 1, 2, 3, 4.5]
+   * arr.delete(1) // === [0, 1, 2, 3, 4.5]
+   * ```
+  */
+  delete(index) {
+    return this.splice(index, 1)[0];
+  }
+  /** swap the position of two items by their index. <br>
+   * if any of the two indices is out of bound, then appropriate number of _empty_ elements will be created to fill the gap;
+   * similar to how index-based assignment works (i.e. `my_list[off_bound_index] = "something"` will increase `my_list`'s length).
+  */
+  swap(index1, index2) {
+    [this[index2], this[index1]] = [this[index1], this[index2]];
+  }
+  /** the `map` array method needs to have its signature corrected, because apparently, javascript internally creates a new instance of `this`, instead of a new instance of an `Array`.
+   * the signature of the map method in typescript is misleading, because:
+   * - it suggests:      `map<U>(callbackfn: (value: T, index: number, array: T[]) => U, thisArg?: any): U[]`
+   * - but in actuality: `map<U>(callbackfn: (value: T, index: number, array: typeof this<T>) => U, thisArg?: any): typeof this<U>`
+   * 
+   * meaning that in our case, `array` is of type `List<T>` (or a subclass thereof), and the return value is also `List<U>` (or a subclass) instead of `Array<U>`. <br>
+   * in addition, it also means that a _new_ instance of this collection (`List`) is created, in order to fill it with the return output. <br>
+   * this is perhaps the desired behavior for many uses, but for my specific use of "reference counting" and "list-like collection of signals",
+   * this feature does not bode well, as I need to be able to account for each and every single instance.
+   * surprise instances of this class are not welcomed, since it would introduce dead dependencies in my "directed acyclic graphs" for signals.
+  */
+  map(callbackfn, thisArg) {
+    return super.map(callbackfn, thisArg);
+  }
+  /** see the comment on {@link map} to understand why the signature of this function needs to be corrected from the standard typescript definition. */
+  flatMap(callback, thisArg) {
+    return super.flatMap(callback, thisArg);
+  }
+  /** see the comment on {@link map} to understand the necessity for this method, instead of the builtin array `map` method. */
+  mapToArray(callbackfn, thisArg) {
+    return [...this].map(callbackfn, thisArg);
+  }
+  /** see the comment on {@link map} to understand the necessity for this method, instead of the builtin array `flatMap` method. */
+  flatMapToArray(callbackfn, thisArg) {
+    return [...this].flatMap(callbackfn, thisArg);
+  }
+  /** get an item at the specified `index`. <br>
+   * this is equivalent to using index-based getter: `my_list[index]`.
+  */
+  get(index) {
+    return this[index];
+  }
+  /** sets the value at the specified index. <br>
+   * prefer using this method instead of index-based assignment, because subclasses may additionally cary out more operations with this method.
+   * and for attaining compatibility between `List` and its subclasses, it would be in your best interest to use the `set` method.
+   * - **not recommended**: `my_list[index] = "hello"`
+   * - **preferred**: `my_list.set(index, "hello")`
+  */
+  set(index, value) {
+    return this[index] = value;
+  }
+  static from(arrayLike, mapfn, thisArg) {
+    let new_list = new this();
+    return new_list.push(...array_from(arrayLike, mapfn, thisArg)), new_list;
+  }
+  static of(...items) {
+    return this.from(items);
+  }
+}, RcList = class extends List {
+  /** the reference counting `Map`, that bookkeeps the multiplicity of each item in the list. */
+  rc = /* @__PURE__ */ new Map();
+  /** get the reference count (multiplicity) of a specific item in the list. */
+  getRc = bind_map_get(this.rc);
+  /** set the reference count of a specific item in the list. */
+  setRc = bind_map_set(this.rc);
+  /** delete the reference counting of a specific item in the list. a `true` is returned if the item did exist in {@link rc}, prior to deletion. */
+  delRc = bind_map_delete(this.rc);
+  constructor(...args) {
+    super(...args), this.incRcs(...this);
+  }
+  /** this overridable method gets called when a new unique item is determined to be added to the list. <br>
+   * this method is called _before_ the item is actually added to the array, but it is executed right _after_ its reference counter has incremented to `1`. <br>
+   * avoid accessing or mutating the array itself in this method's body (consider it an undefined behavior).
+   * 
+   * @param item the item that is being added.
+  */
+  onAdded(item) {
+  }
+  /** this overridable method gets called when a unique item (reference count of 1) is determined to be removed from the list. <br>
+   * this method is called _before_ the item is actually removed from the array, but it is executed right _after_ its reference counter has been deleted. <br>
+   * avoid accessing or mutating the array itself in this method's body (consider it an undefined behavior).
+   * 
+   * @param item the item that is being removed.
+  */
+  onDeleted(item) {
+  }
+  /** increments the reference count of each item in the provided array of items.
+   * 
+   * @param items the items whose counts are to be incremented.
+  */
+  incRcs(...items) {
+    let { getRc, setRc } = this;
+    items.forEach((item) => {
+      let new_count = (getRc(item) ?? 0) + 1;
+      setRc(item, new_count), new_count === 1 && this.onAdded(item);
+    });
+  }
+  /** decrements the reference count of each item in the provided array of items.
+   * 
+   * @param items the items whose counts are to be decremented.
+  */
+  decRcs(...items) {
+    let { getRc, setRc, delRc } = this;
+    items.forEach((item) => {
+      let new_count = (getRc(item) ?? 0) - 1;
+      new_count > 0 ? setRc(item, new_count) : (delRc(item), this.onDeleted(item));
+    });
+  }
+  push(...items) {
+    let return_value = super.push(...items);
+    return this.incRcs(...items), return_value;
+  }
+  pop() {
+    let previous_length = this.length, item = super.pop();
+    return this.length < previous_length && this.decRcs(item), item;
+  }
+  shift() {
+    let previous_length = this.length, item = super.shift();
+    return this.length < previous_length && this.decRcs(item), item;
+  }
+  unshift(...items) {
+    let return_value = super.unshift(...items);
+    return this.incRcs(...items), return_value;
+  }
+  splice(start, deleteCount, ...items) {
+    let removed_items = super.splice(start, deleteCount, ...items);
+    return this.incRcs(...items), this.decRcs(...removed_items), removed_items;
+  }
+  swap(index1, index2) {
+    let max_index = max(index1, index2);
+    max_index >= this.length && this.set(max_index, void 0), super.swap(index1, index2);
+  }
+  /** sets the value at the specified index, updating the counter accordingly. <br>
+   * always use this method instead of index-based assignment, because the latter is not interceptable (except when using proxies):
+   * - **don't do**: `my_list[index] = "hello"`
+   * - **do**: `my_list.set(index, "hello")`
+  */
+  set(index, value) {
+    let old_value = super.get(index), old_length = this.length, increase_in_array_length = index + 1 - old_length;
+    if (increase_in_array_length === 1)
+      this.push(value);
+    else if (value !== old_value || increase_in_array_length > 1) {
+      if (value = super.set(index, value), this.incRcs(value), increase_in_array_length > 0) {
+        let { getRc, setRc } = this;
+        setRc(void 0, (getRc(void 0) ?? 0) + increase_in_array_length);
+      }
+      this.decRcs(old_value);
+    }
+    return value;
+  }
 };
 var default_equality = (v1, v2) => v1 === v2, falsey_equality = (v1, v2) => false, parseEquality = (equals) => equals === false ? falsey_equality : equals ?? default_equality, throttlingEquals = (delta_time_ms, base_equals) => {
   let base_equals_fn = parseEquality(base_equals), throttled_equals = throttle(delta_time_ms, base_equals_fn);
@@ -69,7 +249,7 @@ var default_equality = (v1, v2) => v1 === v2, falsey_equality = (v1, v2) => fals
 }, hash_ids = (ids) => {
   let sqrt_len = ids.length ** 0.5;
   return ids.reduce((sum, id) => sum + id * (id + sqrt_len), 0);
-}, log_get_request = 0 ? (all_signals_get, observed_id, observer_id) => {
+}, assign_id = (id, fn) => object_assign(fn, { id }), log_get_request = 0 ? (all_signals_get, observed_id, observer_id) => {
   let observed_signal = all_signals_get(observed_id), observer_signal = observer_id ? all_signals_get(observer_id) : { name: "untracked" };
   console.log(
     "GET:	",
@@ -101,8 +281,12 @@ var SimpleSignal_Factory = (ctx) => {
     run(forced) {
       return forced ? 1 : 0;
     }
+    /** create an anonymous function that is bound to the provided `method_name`, in addition to assigning this signal's `id` to it. */
     bindMethod(method_name) {
-      return bindMethodToSelfByName(this, method_name);
+      return assign_id(
+        this.id,
+        bindMethodToSelfByName(this, method_name)
+      );
     }
     static create(...args) {
       let new_signal = new this(...args);
@@ -135,6 +319,14 @@ var SimpleSignal_Factory = (ctx) => {
     return this.rid && (this.run(), this.rid = 0), super.get(observer_id);
   }
   // TODO: consider whether or not MemoSignals should be able to be forced to fire independently
+  //       [20240611]: in order to allow derived classes to fire independently, it would be best if we _do_ allow the `forced` parameter to take action.
+  //                   so, as of now, it will take effect.
+  //                   However, I need to document this feature properly now, in addition to changing the signature to allow for a "fireMemo()" forcefull setter-like function.
+  //                   Moreover, I will need to consider the consequences on the existing derived classes, such as the `LazySignal`.
+  // UPDATE: nevermind, I will retract the comments above soon, and will not currently implement forced memo signals, as it will create ambiguity in the following regard:
+  //         when the signal is forced, it will certainly always ultimately propagate (via `SignalUpdateStatus.UPDATED`), but:
+  //         - will it update its current value (via `super.set(this.fn(this.rid))`)
+  //         - or will it skip rerunning the `fn` function and skip setting `this.value`
   run(forced) {
     return super.set(this.fn(this.rid)) ? 1 : 0;
   }
@@ -221,6 +413,128 @@ var AsyncStateSignal_Factory = (ctx) => {
         new_signal.id,
         new_signal.bindMethod("get"),
         new_signal.bindMethod("setPromise")
+      ];
+    }
+  };
+};
+var UnisetCollection = class extends Set {
+  constructor(config, items = []) {
+    super(), object_assign(this, config);
+    let { id, ctx: { addEdge } } = config;
+    for (let item of items)
+      super.add(item), addEdge(item.id, id);
+  }
+  addItems(...items) {
+    let { id, ctx: { addEdge, runId } } = this, mutated = false;
+    items.forEach((item) => {
+      super.has(item) || (super.add(item), addEdge(item.id, id), mutated = true);
+    }), mutated && runId(id);
+  }
+  delItems(...items) {
+    let { id, ctx: { delEdge, runId } } = this, mutated = false;
+    items.forEach((item) => {
+      super.delete(item) && (delEdge(item.id, id), mutated = true);
+    }), mutated && runId(id);
+  }
+  add(value) {
+    return this.addItems(value), this;
+  }
+  delete(value) {
+    let item_exists = super.has(value);
+    return this.delItems(value), item_exists;
+  }
+  clear() {
+    this.delItems(...this);
+  }
+}, ListCollection = class extends RcList {
+  disabled = true;
+  constructor(config, items = []) {
+    super(), object_assign(this, config), this.push(...items), this.disabled = false;
+  }
+  onAdded(item) {
+    this.ctx.addEdge(item.id, this.id);
+  }
+  onDeleted(item) {
+    this.ctx.delEdge(item.id, this.id);
+  }
+  incRcs(...items) {
+    super.incRcs(...items), !(this.disabled ?? true) && items.length > 0 && this.ctx?.runId(this.id);
+  }
+  decRcs(...items) {
+    super.decRcs(...items), !(this.disabled ?? true) && items.length > 0 && this.ctx?.runId(this.id);
+  }
+  splice(start, deleteCount, ...items) {
+    let return_value;
+    return this.ctx.batch.scopedBatching(() => {
+      return_value = super.splice(start, deleteCount, ...items);
+    }), return_value;
+  }
+  swap(index1, index2) {
+    if (index1 === index2)
+      return;
+    let { id, ctx: { batch, runId } } = this;
+    batch.scopedBatching(() => {
+      super.swap(index1, index2), runId(id);
+    });
+  }
+  set(index, value) {
+    let return_value;
+    return this.ctx.batch.scopedBatching(() => {
+      return_value = super.set(index, value);
+    }), return_value;
+  }
+}, CollectionSignal_Factory = (data_structure_class_config, ctx) => {
+  let { dataClass, valueClass } = data_structure_class_config;
+  return class extends ctx.getClass(MemoSignal_Factory) {
+    constructor(fn, config) {
+      super(fn, { ...config, value: new valueClass(), defer: true, equals: false });
+      let id = this.id;
+      this.data = new dataClass({ id, ctx }, config?.value), config?.defer === false && super.run();
+    }
+    static create(fn, config) {
+      let new_signal = new this(fn, config);
+      return [
+        new_signal.id,
+        new_signal.bindMethod("get"),
+        new_signal.data
+      ];
+    }
+  };
+}, UnisetSignal_Factory = (ctx) => {
+  let dataClass = UnisetCollection, valueClass = Set, signalSuperClass = CollectionSignal_Factory.bind(void 0, { dataClass, valueClass });
+  return class extends ctx.getClass(signalSuperClass) {
+    constructor(items = [], config) {
+      super((rid) => {
+        let { data, value } = this;
+        return value.clear(), data.forEach((item) => {
+          value.add(item(0));
+        }), value;
+      }, { ...config, value: items });
+    }
+    static create(items = [], config) {
+      let new_signal = new this(items, config);
+      return [
+        new_signal.id,
+        new_signal.bindMethod("get"),
+        new_signal.data
+      ];
+    }
+  };
+}, ListSignal_Factory = (ctx) => {
+  let dataClass = ListCollection, valueClass = List, signalSuperClass = CollectionSignal_Factory.bind(void 0, { dataClass, valueClass });
+  return class extends ctx.getClass(signalSuperClass) {
+    constructor(items = [], config) {
+      super((rid) => {
+        let { data, value } = this;
+        return value.splice(0), value.push(...data.mapToArray((item) => item(0))), value;
+      }, { ...config, value: items });
+    }
+    static create(items = [], config) {
+      let new_signal = new this(items, config);
+      return [
+        new_signal.id,
+        new_signal.bindMethod("get"),
+        new_signal.data
       ];
     }
   };
@@ -407,15 +721,20 @@ var RecordSignal_Factory = (ctx) => class extends ctx.getClass(SimpleSignal_Fact
 };
 export {
   AsyncStateSignal_Factory,
+  CollectionSignal_Factory,
   Context,
   EffectSignal_Factory,
   LazySignal_Factory,
+  ListCollection,
+  ListSignal_Factory,
   MemoSignal_Factory,
   RecordMemoSignal_Factory,
   RecordSignal_Factory,
   RecordStateSignal_Factory,
   SimpleSignal_Factory,
   StateSignal_Factory,
+  UnisetCollection,
+  UnisetSignal_Factory,
   default_equality,
   falsey_equality,
   throttlingEquals
