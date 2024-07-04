@@ -18,8 +18,9 @@ import {
 	bind_set_has
 } from "./deps.ts"
 import { hash_ids } from "./funcdefs.ts"
-import { EffectFn, MemoFn, SimpleSignalInstance } from "./signal.ts"
-import { EqualityFn, FROM_ID, HASHED_IDS, ID, Signal, SignalClass, SignalUpdateStatus, TO_ID, UNTRACKED_ID } from "./typedefs.ts"
+import type { EffectFn, MemoFn, SimpleSignalInstance } from "./signal.ts"
+import type { EqualityFn, FROM_ID, HASHED_IDS, ID, Signal, SignalClass, TO_ID, UNTRACKED_ID } from "./typedefs.ts"
+import { SignalUpdateStatus } from "./typedefs.ts"
 
 /** if {@link Context | `ctx`} is your context, then these function members are available under {@link Context.dynamic | `ctx.dynamic`}. <br>
  * the purpose of these functions is to dynamically change an existing signal's `value` (or cached value), equality `equals` checking function, or its recomputation `fn` function. <br>
