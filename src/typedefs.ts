@@ -118,8 +118,11 @@ export interface Signal<T> {
 	name?: string
 
 	/** get the value of this signal, and handle any observing signal's id ({@link observer_id}). <br>
-	 * typically, when `observer_id` is non-zero, this signal should handle it by registering it as an
-	 * observer through the use of the context's {@link Context.addEdge} method.
+	 * typically, the implementing class will follow the given sequence of actions, depending on what the `observer_id` is:
+	 * - if it is `0` or `undefined` (i.e. {@link UNTRACKED_ID | untrackable id}), then this signal does not register it as a valid observer (no creation of dependency).
+	 * - if it is `> 0` (i.e. {@link ID | positive id}), then this signal registers it as an observer (through the use of the context's {@link Context.addEdge} method).
+	 * - if it is `< 0` (i.e. {@link ID | negative id}), then this signal unregisters it from observation (through the use of the context's {@link Context.delEdge} method). <br>
+	 *   as a result, the observer-signal will no longer be notified by this signal if this signal ever propagates an update.
 	 * 
 	 * @example
 	 * ```ts
@@ -129,8 +132,10 @@ export interface Signal<T> {
 	 * 		declare value: T
 	 * 		// ...
 	 * 		get(observer_id?: TO_ID | UNTRACKED_ID): T {
-	 * 			// register this.id to observer (if non-zero) in the dependency graph as a directed edge
-	 * 			if (observer_id) { addEdge(this.id, observer_id) }
+	 * 			// if the observer's id is positive, then create a directed edge relation between this signal's `id` and the `observer_id`, in the dependency graph.
+	 * 			if (observer_id > 0) { addEdge(this.id, observer_id) }
+	 * 			// if the observer's id is negative, then delete the directed edge relation between this signal's `id` and the `observer_id`, in the dependency graph.
+	 * 			else if (observer_id < 0) { addEdge(this.id, observer_id) }
 	 * 			return this.value
 	 * 		}
 	 * 		// ...
