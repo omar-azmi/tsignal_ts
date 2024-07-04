@@ -50,13 +50,14 @@ export type SimpleSignalInstance = InstanceType<ReturnType<typeof SimpleSignal_F
 
 /** the base signal class inherited by most other signal classes. <br>
  * its only function is to:
- * - when {@link Signal.get | read}, it return its `this.value`, and register any new observers (those with a nonzero runtime-id {@link Signal.rid | `Signal.rid`})
+ * - when {@link Signal.get | read}, it return its `this.value`, and register any new observers (those with a nonzero runtime-id {@link Signal.rid | `Signal.rid`}).
+ * - when {@link Signal.get | read} by an observer with a negative {@link Signal.id | `Signal.id`}, then it unregisters that observer and return this signal's value (`this.value`).
  * - if {@link Signal.set | set} to a new value, compare it to its previous value through its `this.equals` function,
  *   and return a boolean specifying whether or not the old and new values are the same.
  * - when {@link Signal.run | ran}, it will always return `0` (unchanged), unless it is forced, in which case it will return a `1`.
 */
 export const SimpleSignal_Factory = (ctx: Context) => {
-	const { newId, getId, setId, addEdge } = ctx
+	const { newId, getId, setId, addEdge, delEdge } = ctx
 	/** {@inheritDoc SimpleSignal_Factory} */
 	return class SimpleSignal<T> implements StaticImplements<SignalClass, typeof SimpleSignal> {
 		declare id: ID
@@ -87,8 +88,12 @@ export const SimpleSignal_Factory = (ctx: Context) => {
 
 		get(observer_id?: TO_ID | UNTRACKED_ID): T {
 			if (observer_id) {
-				// register this.id to observer
-				addEdge(this.id, observer_id)
+				// if the observer's id is not untracked (i.e. `0`),
+				// then register them as an observer of this signal (`this.id`) if their id is positive,
+				// otherwise unregister them from observation of this signal if their id is negative.
+				observer_id > 0
+					? addEdge(this.id, observer_id)
+					: delEdge(this.id, - observer_id)
 			}
 			if (DEBUG.LOG) { log_get_request(getId, this.id, observer_id) }
 			return this.value as T
@@ -314,6 +319,7 @@ export const EffectSignal_Factory = (ctx: Context) => {
 		 * is it really necessary for us to rerun `this.fn` effect function for every new observer? it seems to create chaos rather than reducing it.
 		 * UPDATE: decided NOT to re-run on every new observer
 		 * TODO: cleanup this messy doc and redeclare how createEffect works
+		 * TODO: consider how negative observer ids (which are being unregistered) make a difference in the execution, or if they should make a difference or not.
 		*/
 		get(observer_id?: TO_ID | UNTRACKED_ID): void {
 			if (observer_id) {
