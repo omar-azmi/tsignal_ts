@@ -6,7 +6,7 @@ import type { Context } from "./context.ts"
 import { DEBUG, bindMethodToSelfByName, isFunction, type StaticImplements } from "./deps.ts"
 import { assign_id, log_get_request, parseEquality } from "./funcdefs.ts"
 import type { Accessor, EqualityCheck, EqualityFn, ID, Identifiable, PureSetter, Setter, Signal, SignalClass, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.ts"
-import { SignalUpdateStatus } from "./typedefs.ts"
+import { GET_ID, SignalUpdateStatus } from "./typedefs.ts"
 
 // TODO: add `SimpleSignalConfig.deps: ID[]` option to manually enforce dependance on certain signal ids. this can be useful when you want a
 //       signal to defer its first run, yet you also want that signal to react to any of its dependencies, before this signal ever gets run.
@@ -86,14 +86,19 @@ export const SimpleSignal_Factory = (ctx: Context) => {
 			this.equals = parseEquality(equals)
 		}
 
-		get(observer_id?: TO_ID | UNTRACKED_ID): T {
+		get(observer_id?: TO_ID | UNTRACKED_ID): T
+		get(get_self_id: typeof GET_ID): ID
+		get(observer_id?: TO_ID | UNTRACKED_ID | typeof GET_ID): T | ID {
 			if (observer_id) {
+				const this_id = this.id
+				// if the `GET_ID` symbol was passed, then the function caller intends to obtain this signal's id.
+				if (observer_id === GET_ID) { return this_id as ID }
 				// if the observer's id is not untracked (i.e. `0`),
 				// then register them as an observer of this signal (`this.id`) if their id is positive,
 				// otherwise unregister them from observation of this signal if their id is negative.
 				observer_id > 0
-					? addEdge(this.id, observer_id)
-					: delEdge(this.id, - observer_id)
+					? addEdge(this_id, observer_id)
+					: delEdge(this_id, - observer_id)
 			}
 			if (DEBUG.LOG) { log_get_request(getId, this.id, observer_id) }
 			return this.value as T
@@ -189,12 +194,14 @@ export const MemoSignal_Factory = (ctx: Context) => {
 			if (config?.defer === false) { this.get() }
 		}
 
-		get(observer_id?: TO_ID | UNTRACKED_ID): T {
+		get(observer_id?: TO_ID | UNTRACKED_ID): T
+		get(get_self_id: typeof GET_ID): ID
+		get(observer_id?: TO_ID | UNTRACKED_ID | typeof GET_ID): T | ID {
 			if (this.rid) {
 				this.run()
 				this.rid = 0 as UNTRACKED_ID
 			}
-			return super.get(observer_id)
+			return super.get(observer_id as any)
 		}
 
 		// TODO: consider whether or not MemoSignals should be able to be forced to fire independently
@@ -258,13 +265,15 @@ export const LazySignal_Factory = (ctx: Context) => {
 			return (this.dirty = 1)
 		}
 
-		get(observer_id?: TO_ID | UNTRACKED_ID): T {
+		get(observer_id?: TO_ID | UNTRACKED_ID): T
+		get(get_self_id: typeof GET_ID): ID
+		get(observer_id?: TO_ID | UNTRACKED_ID | typeof GET_ID): T | ID {
 			if (this.rid || this.dirty) {
 				super.set(this.fn(this.rid))
 				this.dirty = 0
 				this.rid = 0 as UNTRACKED_ID
 			}
-			return super.get(observer_id)
+			return super.get(observer_id as any)
 		}
 
 		static create<T>(fn: MemoFn<T>, config?: MemoSignalConfig<T>): [idLazy: ID, getLazy: Accessor<T>] {
@@ -321,10 +330,12 @@ export const EffectSignal_Factory = (ctx: Context) => {
 		 * TODO: cleanup this messy doc and redeclare how createEffect works
 		 * TODO: consider how negative observer ids (which are being unregistered) make a difference in the execution, or if they should make a difference or not.
 		*/
-		get(observer_id?: TO_ID | UNTRACKED_ID): void {
+		get(observer_id?: TO_ID | UNTRACKED_ID): void
+		get(get_self_id: typeof GET_ID): ID
+		get(observer_id?: TO_ID | UNTRACKED_ID | typeof GET_ID): void | ID {
 			if (observer_id) {
 				if (this.rid) { this.run() }
-				super.get(observer_id)
+				super.get(observer_id as any)
 			}
 		}
 

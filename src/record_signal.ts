@@ -5,7 +5,7 @@
 import type { Context } from "./context.ts"
 import { array_isArray, isFunction, object_keys, object_values } from "./deps.ts"
 import { SimpleSignal_Factory } from "./signal.ts"
-import type { Accessor, EqualityCheck, EqualityFn, ID, Identifiable, PureSetter, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.ts"
+import type { Accessor, EqualityCheck, EqualityFn, GET_ID, ID, Identifiable, PureSetter, TO_ID, UNTRACKED_ID, Updater } from "./typedefs.ts"
 import { SignalUpdateStatus } from "./typedefs.ts"
 
 // TODO: implement the following kinds of signals: `DictState` (or just `Dict`), `ListState` (or just `List`), `DictMemo`, and `ListMemo`
@@ -184,12 +184,14 @@ export const RecordMemoSignal_Factory = (ctx: Context) => {
 			if (config?.defer === false) { this.get() }
 		}
 
-		get(observer_id?: TO_ID | UNTRACKED_ID): this["value"] {
+		get(observer_id?: TO_ID | UNTRACKED_ID): this["value"]
+		get(get_self_id: typeof GET_ID): ID
+		get(observer_id?: TO_ID | UNTRACKED_ID | typeof GET_ID): this["value"] | ID {
 			if (this.rid) {
 				this.run()
 				this.rid = 0 as UNTRACKED_ID
 			}
-			return super.get(observer_id)
+			return super.get(observer_id as any)
 		}
 
 		run(forced?: boolean): SignalUpdateStatus {

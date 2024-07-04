@@ -6,7 +6,7 @@
 import type { Context } from "./context.ts"
 import { Stringifyable, isFunction, isPrimitive, symbol_iterator } from "./deps.ts"
 import { MemoSignalConfig, SimpleSignal_Factory } from "./signal.ts"
-import type { Accessor, PureAccessor, TO_ID, UNTRACKED_ID } from "./typedefs.ts"
+import type { Accessor, GET_ID, ID, PureAccessor, TO_ID, UNTRACKED_ID } from "./typedefs.ts"
 import { SignalUpdateStatus } from "./typedefs.ts"
 
 
@@ -79,12 +79,14 @@ export const DOMSignal_Factory = (ctx: Context) => {
 			if ((config?.defer ?? false) === false) { this.get() }
 		}
 
-		get(observer_id?: TO_ID | UNTRACKED_ID): N {
+		get(observer_id?: TO_ID | UNTRACKED_ID): N
+		get(get_self_id: typeof GET_ID): ID
+		get(observer_id?: TO_ID | UNTRACKED_ID | typeof GET_ID): N | ID {
 			if (this.rid) {
 				this.run()
 				this.rid = 0 as UNTRACKED_ID
 			}
-			return super.get(observer_id)
+			return super.get(observer_id as any)
 		}
 
 		// @ts-ignore: signature is incompatible with super class

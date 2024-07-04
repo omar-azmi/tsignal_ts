@@ -41,7 +41,10 @@ export type Updater<T> = (prev_value?: T) => T
  * use this version when annotating functions that do not read the id of dependency signals (quite common),
  * otherwise opt out for {@link Accessor} if you do intend to read the ids of the dependency signals (common in dynamic signals, which can erase and add new dependencies cleanly).
 */
-export type PureAccessor<T> = ((observer_id?: TO_ID | UNTRACKED_ID) => T)
+export type PureAccessor<T> = {
+	(observer_id?: TO_ID | UNTRACKED_ID): T
+	(get_self_id: typeof GET_ID): ID
+}
 
 /** type definition for a signal value setter function. <br>
  * it differs from the _actual_ returned {@link Setter} type of a {@link SignalClass.create | signal create function}, in that it lacks the id information of its own signal. <br>
@@ -144,6 +147,7 @@ export interface Signal<T> {
 	 * ```
 	*/
 	get(observer_id?: TO_ID | UNTRACKED_ID): T
+	get(get_self_id: typeof GET_ID): ID
 
 	/** set the value of this signal. <br>
 	 * the meaning of setting a signal's value greatly varies from signal to signal, which is why it is so abstracted. <br>
@@ -241,3 +245,36 @@ export const enum SignalUpdateStatus {
 	UNCHANGED = 0,
 	UPDATED = 1,
 }
+
+/** when this symbol is passed onto an {@link Accessor}, the accessor should return its associated signal's {@link Signal.id | `id`}, rather than returning its own {@link Signal.value | `value`}.
+ * finding out a signal's `id` through the use of its accessor function has many benefits when it comes to dynamic dependency management.
+ * 
+ * @example
+ * ```ts
+ * const [idA, getA, setA] = createState<number>(55)
+ * console.assert(getA() === 55)
+ * console.assert(getA(GET_ID) === idA)
+ * ```
+ * 
+ * @example
+ * ```ts
+ * declare ctx: Context
+ * const [idA, getA, setA] = createState<number>(55)
+ * const [idB, getB] = createMemo<number>((id) => {
+ * 	const double_value = getA(id) * 2
+ * 	console.log(double_value)
+ * 	return double_value
+ * }, { defer: false }) // the console will immediately log "110".
+ * setA(22) // this update will cause the memo signal to recompute and log "44" in the console.
+ * console.assert(getB() === getA() * 2)
+ * 
+ * // now we remove the memo's dependency on the state signal.
+ * ctx.delEdge(getA(GET_ID), getB(GET_ID))
+ * // notice we didn't have to use `idA` nor `idB` variables.
+ * // this is because the ids were provided by the accessors when called with the `GET_ID` symbol parameter.
+ * 
+ * setA(33) // this will no longer update the memo signal.
+ * console.assert(getB() !== getA() * 2)
+ * ```
+*/
+export const GET_ID = Symbol()
