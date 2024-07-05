@@ -31,39 +31,41 @@ export class UnisetCollection<A extends Accessor<any>> extends Set<A> implements
 		// so the only way out is by not adding the initial items via the super constructor, and instead adding them manually, one by one later on.
 		super()
 		object_assign(this, config)
-		const { id, ctx: { addEdge } } = config
+		const id = config.id
 		// the initial items are added as a dependency, but they will NOT trigger an update cycle via `runId`.
 		// this is because we want the user of this class to decide whether or not it should fire initially.
 		// the default behavior is similar to `defer`ing
 		for (const item of items) {
 			super.add(item)
-			addEdge(item.id, id)
+			item(id)
 		}
 	}
 
 	addItems(...items: A[]): void {
-		const { id, ctx: { addEdge, runId } } = this
+		const { id, ctx } = this
 		let mutated = false
 		items.forEach((item) => {
 			if (!super.has(item)) {
 				super.add(item)
-				addEdge(item.id, id)
+				// accessing the item will cause it to register this signal as an observer.
+				item(id)
 				mutated = true
 			}
 		})
-		if (mutated) { runId(id) }
+		if (mutated) { ctx.runId(id) }
 	}
 
 	delItems(...items: A[]): void {
-		const { id, ctx: { delEdge, runId } } = this
+		const { id, ctx } = this
 		let mutated = false
 		items.forEach((item) => {
 			if (super.delete(item)) {
-				delEdge(item.id, id)
+				// accessing the item with the negative id will cause it to unregister this signal from the item's signal (i.e. this signal is no longer an observer).
+				item(-id)
 				mutated = true
 			}
 		})
-		if (mutated) { runId(id) }
+		if (mutated) { ctx.runId(id) }
 	}
 
 	add(value: A): this {
@@ -103,11 +105,11 @@ export class ListCollection<A extends Accessor<any>> extends RcList<A> implement
 	}
 
 	protected onAdded(item: A): void {
-		this.ctx.addEdge(item.id, this.id)
+		item(this.id)
 	}
 
 	protected onDeleted(item: A): void {
-		this.ctx.delEdge(item.id, this.id)
+		item(- this.id)
 	}
 
 	protected incRcs(...items: A[]): void {
